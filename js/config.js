@@ -39,8 +39,12 @@ var CONFIG = {
   SKIP_PROVIDERS: [2, 3, 10, 192, 2285, 538, 7, 68, 35],
 
   // Built-in player: Stremio-protocol addons that return direct stream URLs.
-  // None are built in. Add yours in Settings → Stream addons (or list base URLs here).
-  STREAM_ADDONS: [],
+  // Defaults below; add more in Settings → Stream addons (kept separately).
+  //   maxYear: only ask this addon about titles released up to that year
+  //   (Archive.org guesses by title, so newer films would get unrelated uploads).
+  STREAM_ADDONS: [
+    { name: "Archive.org (public domain)", url: "https://dev.nebulawp.org/stremio/archive.org-addon/manifest.json", movieOnly: true, maxYear: 1970 }
+  ],
   // Subtitle addons (Stremio protocol). OpenSubtitles' public addon allows CORS.
   SUBTITLE_ADDONS: ["https://opensubtitles-v3.strem.io"],
 

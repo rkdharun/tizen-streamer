@@ -2,7 +2,7 @@
  * Stream + subtitle addons (Stremio addon protocol), for the built-in player.
  *   streams:   {base}/stream/{movie|series}/{imdb}[:{season}:{episode}].json -> {streams:[...]}
  *   subtitles: {base}/subtitles/{movie|series}/{id}.json                     -> {subtitles:[{id,url,lang}]}
- * Stream addons are added by the user in Settings; none are built in.
+ * Defaults come from CONFIG.STREAM_ADDONS (with optional limits); extras are added in Settings.
  */
 var Addons = (function () {
   var TIMEOUT_MS = 15000;
@@ -16,14 +16,39 @@ var Addons = (function () {
     return u.replace(/\/manifest\.json.*$/i, "").replace(/\/+$/, "");
   }
 
-  function list() {
-    var saved = Store.getSetting("addons", null);
-    var arr = saved || CONFIG.STREAM_ADDONS || [];
-    return arr.map(normalize).filter(Boolean);
+  // Built-in defaults (with optional limits) + the user's own addons from Settings.
+  function defaults() {
+    return (CONFIG.STREAM_ADDONS || []).map(function (a) {
+      return typeof a === "string" ? { url: normalize(a) } :
+        { url: normalize(a.url), name: a.name, maxYear: a.maxYear, movieOnly: a.movieOnly };
+    }).filter(function (a) { return a.url; });
   }
 
+  function userList() { return (Store.getSetting("addons", null) || []).map(normalize).filter(Boolean); }
+
+  function all() {
+    var out = defaults(), seen = {};
+    out.forEach(function (a) { seen[a.url] = 1; });
+    userList().forEach(function (u) { if (!seen[u]) { seen[u] = 1; out.push({ url: u }); } });
+    return out;
+  }
+
+  // Addons worth asking about this title (respects maxYear / movieOnly limits).
+  function forItem(item, type) {
+    var year = parseInt(String(item.release_date || item.first_air_date || "").slice(0, 4), 10);
+    return all().filter(function (a) {
+      if (a.movieOnly && type === "tv") return false;
+      if (a.maxYear && (!year || year > a.maxYear)) return false;
+      return true;
+    });
+  }
+
+  function list() { return all().map(function (a) { return a.url; }); }
+
   function setFromText(text) {
-    var arr = String(text || "").split(/[\s,]+/).map(normalize).filter(Boolean);
+    var defs = {};
+    defaults().forEach(function (a) { defs[a.url] = 1; });
+    var arr = String(text || "").split(/[\s,]+/).map(normalize).filter(function (u) { return u && !defs[u]; });
     Store.setSetting("addons", arr);
     return arr;
   }
@@ -47,8 +72,8 @@ var Addons = (function () {
   function host(u) { var m = /^https?:\/\/([^\/]+)/.exec(u); return m ? m[1] : u; }
 
   // All directly playable streams from every addon, playable-looking ones first.
-  function streams(imdb, type, season, episode) {
-    var bases = list();
+  function streams(imdb, type, season, episode, item) {
+    var bases = (item ? forItem(item, type) : all()).map(function (a) { return a.url; });
     if (!bases.length || !imdb) return Promise.resolve([]);
     var id = stremioId(imdb, type, season, episode);
     var kind = type === "tv" ? "series" : "movie";
@@ -107,5 +132,5 @@ var Addons = (function () {
   function langName(code) { return LANGS[code] || TWO[code] && LANGS[TWO[code]] || String(code).toUpperCase(); }
   function lang3(code2) { return TWO[code2] || code2; }
 
-  return { list: list, setFromText: setFromText, normalize: normalize, streams: streams, subtitles: subtitles, langName: langName, lang3: lang3 };
+  return { list: list, all: all, defaults: defaults, userList: userList, forItem: forItem, setFromText: setFromText, normalize: normalize, streams: streams, subtitles: subtitles, langName: langName, lang3: lang3 };
 })();

@@ -93,8 +93,12 @@ Embedded players belong to other websites, so the app can't click inside them. T
 player plays **direct streams** in ReelTV's own `<video>` (hls.js for HLS), so every control is
 an app button and works with the remote, like Nuvio or Stremio on TVs.
 
-1. **Settings → Stream addons**: add one or more Stremio-compatible addon URLs
-   (`https://…/manifest.json`, comma-separated). None are built in.
+1. **Built in:** the Archive.org public-domain addon
+   (`https://dev.nebulawp.org/stremio/archive.org-addon/manifest.json`). It's only used for films
+   released up to 1970, because it guesses by title and returns unrelated uploads for newer films.
+   **Settings → Stream addons**: add your own Stremio-compatible addon URLs
+   (`https://…/manifest.json`, comma-separated), e.g. a Jellyfin bridge for your own library.
+   Extras are stored separately and never replace the defaults.
 2. Press **Play**. The app asks each addon for streams
    (`/stream/movie/<imdb>.json`, `/stream/series/<imdb>:<s>:<e>.json`) and plays the first that works,
    skipping broken ones automatically. If none work, it falls back to the embed sources.

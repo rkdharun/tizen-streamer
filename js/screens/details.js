@@ -24,7 +24,7 @@ Screens.details = function (params) {
 
   function play(season, episode) {
     // Built-in player when stream addons are set up (it falls back to embeds by itself)
-    App.push(Addons.list().length ? "watch" : "player", {
+    App.push(Addons.forItem(data, type).length ? "watch" : "player", {
       item: data,
       type: type,
       season: season,

@@ -144,7 +144,7 @@ Screens.watch = function (params) {
   function loadStreams() {
     status("Finding streams…");
     if (!imdb) { fallback("This title has no IMDb id, so addons can't look it up."); return; }
-    Addons.streams(imdb, type, season, episode).then(function (list) {
+    Addons.streams(imdb, type, season, episode, item).then(function (list) {
       if (destroyed) return;
       streams = list;
       if (!streams.length) { fallback("No direct streams from your addons for this title."); return; }

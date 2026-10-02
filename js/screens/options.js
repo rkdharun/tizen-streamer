@@ -47,10 +47,10 @@ Screens.settings = function () {
     which.blur();
     editing = null;
     if (which === addonInput) {
-      if (!save) { addonInput.value = Addons.list().join(", "); return; }
+      if (!save) { addonInput.value = Addons.userList().join(", "); return; }
       var saved = Addons.setFromText(addonInput.value);
       addonInput.value = saved.join(", ");
-      UI.toast(saved.length ? saved.length + " addon(s) saved. Play now uses the built-in player" : "Addons cleared. Play uses embed sources");
+      UI.toast(saved.length ? saved.length + " extra addon(s) saved" : "Extra addons cleared (built-in defaults stay)");
       return;
     }
     if (!save) { keyInput.value = Store.getSetting("tmdbKey", "") || CONFIG.TMDB_API_KEY || ""; return; }
@@ -66,11 +66,11 @@ Screens.settings = function () {
 
   // --- stream addons (built-in player) ---
   var addonInput = h("input", { class: "text-input", type: "text", placeholder: "https://…/manifest.json (comma-separate several)", autocomplete: "off", spellcheck: "false" });
-  addonInput.value = Addons.list().join(", ");
+  addonInput.value = Addons.userList().join(", ");
   var addonRow = h("div", { class: "setting focusable input-row" }, [
     h("div", { class: "setting-text" }, [
       h("div", { class: "setting-label", text: "Stream addons (built-in player)" }),
-      h("div", { class: "setting-desc", text: "Stremio-compatible addon URLs that return direct streams. When set, Play uses ReelTV's own player (remote-controlled subtitles, quality, audio). Leave empty to use embed sources." })
+      h("div", { class: "setting-desc", text: "Extra Stremio-compatible addon URLs (comma-separated). Built in: " + Addons.defaults().map(function (a) { return a.name || a.url; }).join(", ") + ". When an addon applies to a title, Play uses ReelTV's own player; otherwise embed sources." })
     ]),
     addonInput
   ]);
