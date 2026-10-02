@@ -106,7 +106,7 @@ js/app.js             router, sidebar, dialogs, key dispatch
 js/tmdb.js            TMDB client (cached)
 js/storage.js         settings / My List / history
 js/ui.js              cards, rows, buttons, toast
-js/screens/*.js       home, browse (movies/tv/anime), search, details, player, mylist, settings
+js/screens/*.js       home, browse (movies/tv/anime), search, details, player, mylist, options (= Settings; not named settings.js because the Tizen packager drops it)
 js/dev-mock.js        ?mock fake data for desktop testing
 ```
 

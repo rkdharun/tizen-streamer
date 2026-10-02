@@ -1,4 +1,4 @@
-/* Settings: TMDB key, default source, shield, interaction time, data reset. */
+/* Settings screen. (File is named options.js: Tizen's packager drops paths matching ".settings", which also matched "/settings.js".) */
 Screens.settings = function () {
   var h = UI.h;
   var list = h("div", { class: "settings-list nav-group" });
