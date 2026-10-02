@@ -28,31 +28,56 @@ var Nav = (function () {
 
   function group(el) { return el ? el.closest(".nav-group") : null; }
 
+  /*
+   * Scrolling uses GPU transforms instead of scrollLeft/scrollTop: an element with
+   * data-scroll is the *moving content*, its parent is the clipping viewport.
+   * Positions are measured relative to the moving element itself, so values stay
+   * correct even while a previous transition is still animating.
+   */
+  function setOffset(node, axis, off) {
+    if (node.__off === off) return;
+    node.__off = off;
+    node.style.transform = axis === "x" ? "translate3d(" + (-off) + "px,0,0)" : "translate3d(0," + (-off) + "px,0)";
+  }
+
+  function resetScroll(node) {
+    node.__off = 0;
+    node.style.transform = "";
+  }
+
   function ensureVisible(el) {
+    var k = 1 / (window.__scale || 1);   // rects are scaled on desktop, layout px are not
     var node = el.parentElement;
     while (node && node !== document.body) {
       var axis = node.getAttribute && node.getAttribute("data-scroll");
       if (axis) {
-        var c = node.getBoundingClientRect();
-        var k = 1 / (window.__scale || 1);   // rects are scaled, scroll offsets are not
-        if (axis === "x") {
-          var r = el.getBoundingClientRect();
-          if (r.left < c.left + PAD) node.scrollLeft += (r.left - c.left) * k - PAD;
-          else if (r.right > c.right - PAD) node.scrollLeft += (r.right - c.right) * k + PAD;
-        } else {
-          var anchor = el.closest("[data-scroll-anchor]") || el;
-          if (!node.contains(anchor)) anchor = el;
-          var ra = anchor.getBoundingClientRect();
-          var mode = node.getAttribute("data-scroll-mode") || "start";
-          if (mode === "start") {
-            // Align the anchor near the top (classic TV row behaviour). First row stays at 0.
-            var target = node.scrollTop + (ra.top - c.top) * k - PAD;
-            node.scrollTop = anchor === node.firstElementChild ? 0 : Math.max(0, target);
-          } else {
-            if (ra.top < c.top + PAD) node.scrollTop += (ra.top - c.top) * k - PAD;
-            else if (ra.bottom > c.bottom - PAD) node.scrollTop += (ra.bottom - c.bottom) * k + PAD;
-          }
+        var clip = node.parentElement;
+        var nr = node.getBoundingClientRect();
+        var target = el;
+        if (axis === "y") {
+          var anchor = el.closest("[data-scroll-anchor]");
+          if (anchor && node.contains(anchor)) target = anchor;
         }
+        var r = target.getBoundingClientRect();
+        var x = axis === "x";
+        var pos = ((x ? r.left - nr.left : r.top - nr.top)) * k;      // position inside content
+        var size = (x ? r.width : r.height) * k;
+        var base = node.offsetParent === clip ? (x ? node.offsetLeft : node.offsetTop) : 0;
+        var view = x ? clip.clientWidth : clip.clientHeight;
+        var extent = x ? node.scrollWidth : node.scrollHeight;
+        var off = node.__off || 0;
+        var mode = x ? "nearest" : (node.getAttribute("data-scroll-mode") || "start");
+
+        if (mode === "start") {
+          // Classic TV rows: focused row sits near the top; first row stays at 0.
+          off = target === node.firstElementChild ? 0 : base + pos - PAD;
+        } else {
+          var screenPos = base + pos - off;
+          if (screenPos < PAD) off = base + pos - PAD;
+          else if (screenPos + size > view - PAD) off = base + pos + size - view + PAD;
+        }
+        var max = Math.max(0, base + extent - view);
+        setOffset(node, axis, Math.round(Math.max(0, Math.min(off, max))));
       }
       node = node.parentElement;
     }
@@ -75,12 +100,12 @@ var Nav = (function () {
 
   function centre(r) { return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; }
 
-  function findBest(dir) {
+  function findBest(dir, pool) {
     var from = current.getBoundingClientRect();
     var fc = centre(from);
     var best = null, bestScore = Infinity;
 
-    focusables().forEach(function (el) {
+    pool.forEach(function (el) {
       if (el === current) return;
       var r = el.getBoundingClientRect();
       var c = centre(r);
@@ -132,7 +157,15 @@ var Nav = (function () {
       return true;
     }
 
-    var best = findBest(dir);
+    // Left/right: try the current row/group first; only scan the whole screen if needed.
+    var best = null;
+    if ((dir === "left" || dir === "right") && cg) {
+      var inGroup = [];
+      var nodes = cg.querySelectorAll(".focusable");
+      for (var i = 0; i < nodes.length; i++) if (isVisible(nodes[i])) inGroup.push(nodes[i]);
+      best = findBest(dir, inGroup);
+    }
+    if (!best) best = findBest(dir, focusables());
     if (!best) return false;
 
     var curGroup = group(current), bestGroup = group(best);
@@ -176,6 +209,7 @@ var Nav = (function () {
     restoreOr: function (el) {
       if (el && root.contains(el) && isVisible(el)) focus(el); else focusFirst();
     },
-    ensureVisible: ensureVisible
+    ensureVisible: ensureVisible,
+    resetScroll: resetScroll
   };
 })();

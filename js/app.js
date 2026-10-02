@@ -4,6 +4,7 @@ var Screens = {};
 var App = (function () {
   var stack = [];          // [{name, params, screen, lastFocus}]
   var modalState = null;   // {el, prevRoot, prevFocus}
+  var lastMove = 0;
   var appEl, stageEl, overlayEl, sidebarEl;
 
   var MENU = [
@@ -168,6 +169,10 @@ var App = (function () {
 
     switch (key) {
       case "up": case "down": case "left": case "right":
+        // Holding a key auto-repeats very fast; cap it so the TV can keep up.
+        var now = Date.now();
+        if (evt.repeat && now - lastMove < 110) return;
+        lastMove = now;
         Nav.move(key); break;
       case "enter":
         var c = Nav.current();

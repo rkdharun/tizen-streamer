@@ -127,7 +127,7 @@ Screens.details = function (params) {
   function loadSeason(n) {
     seasonState.season = n;
     episodesRow.innerHTML = "";
-    episodesRow.scrollLeft = 0;
+    Nav.resetScroll(episodesRow);
     episodesRow.__last = null;
     episodesRow.appendChild(h("div", { class: "card landscape skeleton" }, [h("div", { class: "card-img" })]));
     TMDB.season(id, n).then(function (s) {
