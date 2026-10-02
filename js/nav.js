@@ -16,6 +16,7 @@ var Nav = (function () {
     if (!el || !document.body.contains(el)) return false;
     if (el.offsetParent === null && getComputedStyle(el).position !== "fixed") return false;
     if (el.classList.contains("disabled")) return false;
+    if (el.closest(".screen-leave")) return false;
     return true;
   }
 
@@ -34,9 +35,14 @@ var Nav = (function () {
    * Positions are measured relative to the moving element itself, so values stay
    * correct even while a previous transition is still animating.
    */
+  // While a key is held, moves arrive every ~110ms. Short linear transitions chained
+  // back-to-back give a constant-speed glide instead of repeated ease-out bursts.
+  var gliding = false;
+
   function setOffset(node, axis, off) {
     if (node.__off === off) return;
     node.__off = off;
+    node.style.transition = gliding ? "transform 130ms linear" : "";
     node.style.transform = axis === "x" ? "translate3d(" + (-off) + "px,0,0)" : "translate3d(0," + (-off) + "px,0)";
   }
 
@@ -130,7 +136,12 @@ var Nav = (function () {
     return best;
   }
 
-  function move(dir) {
+  function move(dir, repeat) {
+    gliding = !!repeat;
+    try { return moveInner(dir); } finally { gliding = false; }
+  }
+
+  function moveInner(dir) {
     if (!current || !root.contains(current) || !isVisible(current)) {
       focusFirst();
       return true;
@@ -198,7 +209,12 @@ var Nav = (function () {
   return {
     setRoot: function (el, keepFocus) {
       root = el || document.body;
-      if (!keepFocus) current = null;
+      if (!keepFocus && current) {
+        // Properly blur the old element (e.g. collapses the sidebar after picking a page)
+        current.classList.remove("focused");
+        if (current.__onBlur) current.__onBlur();
+        current = null;
+      }
     },
     getRoot: function () { return root; },
     setPrimary: function (el) { primary = el; },

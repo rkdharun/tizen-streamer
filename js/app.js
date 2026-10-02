@@ -44,19 +44,52 @@ var App = (function () {
 
   function top() { return stack[stack.length - 1]; }
 
+  var TRANSITION_MS = 320;
+  var fullscreenTimer = null;
+
   function applyRoot() {
     var t = top();
-    var full = t && t.screen.fullscreen;
-    appEl.classList.toggle("fullscreen-mode", !!full);
+    var full = !!(t && t.screen.fullscreen);
+    clearTimeout(fullscreenTimer);
+    if (full) {
+      // Keep the page underneath visible while the overlay animates in, then hide it
+      // (hidden layers are cheaper for the TV to composite).
+      fullscreenTimer = setTimeout(function () { appEl.classList.add("fullscreen-mode"); }, TRANSITION_MS);
+    } else {
+      appEl.classList.remove("fullscreen-mode");
+    }
     Nav.setRoot(full ? t.screen.el : appEl);
     Nav.setPrimary(t ? t.screen.el : null);
   }
 
+  // Start from the "enter" pose and let CSS transition it to rest.
+  function animateIn(el) {
+    el.classList.add("screen-enter");
+    void el.offsetWidth;            // commit the start state
+    el.classList.remove("screen-enter");
+  }
+
+  // A screen that throws shows the error instead of leaving a blank page.
+  function errorScreen(name, err) {
+    var el = UI.h("div", { class: "error-screen" }, [
+      UI.message("Couldn't open " + name, String(err && err.message || err),
+        UI.button("Go Home", "home", function () { go("home"); }, "autofocus")),
+      UI.h("pre", { class: "error-stack", text: String(err && err.stack || "").split("\n").slice(0, 4).join("\n") })
+    ]);
+    return { el: el };
+  }
+
   function mount(name, params) {
-    var factory = Screens[name];
-    var screen = factory(params || {});
+    var screen;
+    try {
+      if (!Screens[name]) throw new Error("Screen '" + name + "' failed to load (script error)");
+      screen = Screens[name](params || {});
+    } catch (err) {
+      screen = errorScreen(name, err);
+    }
     screen.el.classList.add("screen");
     (screen.fullscreen ? overlayEl : stageEl).appendChild(screen.el);
+    animateIn(screen.el);
     var entry = { name: name, params: params, screen: screen, lastFocus: null };
     stack.push(entry);
     applyRoot();
@@ -65,9 +98,13 @@ var App = (function () {
     return entry;
   }
 
-  function unmount(entry) {
+  function unmount(entry, animate) {
     if (entry.screen.destroy) entry.screen.destroy();
-    if (entry.screen.el.parentNode) entry.screen.el.parentNode.removeChild(entry.screen.el);
+    var el = entry.screen.el;
+    if (!el.parentNode) return;
+    if (!animate) { el.parentNode.removeChild(el); return; }
+    el.classList.add("screen-leave");     // Nav ignores leaving screens
+    setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, TRANSITION_MS);
   }
 
   function hideTop() {
@@ -75,12 +112,15 @@ var App = (function () {
     if (!t) return;
     t.lastFocus = Nav.current();
     if (t.screen.onHide) t.screen.onHide();
-    t.screen.el.style.display = "none";
+    // Hide only after the incoming screen has covered it.
+    var el = t.screen.el;
+    t.hideTimer = setTimeout(function () { el.style.display = "none"; }, TRANSITION_MS);
   }
 
   function go(name, params) {
     closeModal();
-    while (stack.length) unmount(stack.pop());
+    var animate = stack.length > 0;
+    while (stack.length) unmount(stack.pop(), animate);
     markMenu(name);
     mount(name, params);
   }
@@ -95,8 +135,9 @@ var App = (function () {
     var t = top();
     if (t && t.screen.onBack && t.screen.onBack()) return;
     if (stack.length > 1) {
-      unmount(stack.pop());
+      unmount(stack.pop(), true);
       var prev = top();
+      clearTimeout(prev.hideTimer);
       prev.screen.el.style.display = "";
       applyRoot();
       if (prev.screen.onShow) prev.screen.onShow(false);
@@ -137,6 +178,7 @@ var App = (function () {
     ]);
     var el = h("div", { class: "modal" }, [box]);
     document.getElementById("app").appendChild(el);
+    animateIn(el);
     modalState = { el: el, prevRoot: Nav.getRoot(), prevFocus: Nav.current(), onClose: opts.onClose };
     Nav.setRoot(el);
     Nav.focusFirst();
@@ -173,7 +215,7 @@ var App = (function () {
         var now = Date.now();
         if (evt.repeat && now - lastMove < 110) return;
         lastMove = now;
-        Nav.move(key); break;
+        Nav.move(key, evt.repeat); break;
       case "enter":
         var c = Nav.current();
         if (c) c.click();
@@ -191,6 +233,11 @@ var App = (function () {
     window.__scale = s;
     appEl.style.transform = s === 1 ? "" : "scale(" + s + ")";
   }
+
+  // Surface uncaught errors on screen: there's no console on the TV.
+  window.addEventListener("error", function (e) {
+    try { UI.toast("Error: " + e.message + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : ""), 8000); } catch (x) {}
+  });
 
   function init() {
     appEl = document.getElementById("app");

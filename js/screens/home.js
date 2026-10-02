@@ -7,7 +7,9 @@ Screens.home = function () {
 
   function buildHero(items) {
     heroItems = items.slice(0, 6);
-    var bg = h("div", { class: "hero-bg" });
+    // Two backdrop layers: the next image preloads into the hidden one, then they crossfade.
+    var bgs = [h("div", { class: "hero-bg" }), h("div", { class: "hero-bg" })];
+    var front = 0;
     var titleEl = h("h1", { class: "hero-title" });
     var metaEl = h("div", { class: "hero-meta" });
     var overview = h("p", { class: "hero-overview" });
@@ -23,20 +25,42 @@ Screens.home = function () {
       App.push("details", { type: it.media_type, id: it.id });
     });
 
+    var content = h("div", { class: "hero-content" });
     heroEl = h("section", { class: "hero", "data-scroll-anchor": "" }, [
-      bg,
+      bgs[0], bgs[1],
       h("div", { class: "hero-shade" }),
-      h("div", { class: "hero-content" }, [
-        titleEl, metaEl, overview,
-        h("div", { class: "hero-actions nav-group" }, [playBtn, infoBtn])
-      ]),
+      content,
       dots
     ]);
 
-    function show(i) {
+    [titleEl, metaEl, overview, h("div", { class: "hero-actions nav-group" }, [playBtn, infoBtn])]
+      .forEach(function (n) { content.appendChild(n); });
+    var textFields = h("div", { class: "hero-text" }, [titleEl, metaEl, overview]);
+    content.insertBefore(textFields, content.firstChild);
+
+    var swapTimer = null;
+    function show(i, instant) {
       heroIndex = (i + heroItems.length) % heroItems.length;
       var it = heroItems[heroIndex];
-      bg.style.backgroundImage = "url(" + TMDB.img(it.backdrop_path, "w1280") + ")";
+      var url = TMDB.img(it.backdrop_path, "w1280");
+      var img = new Image();
+      img.onload = img.onerror = function () {
+        var back = bgs[1 - front];
+        back.style.backgroundImage = "url(" + url + ")";
+        back.classList.add("on");
+        bgs[front].classList.remove("on");
+        front = 1 - front;
+      };
+      img.src = url;
+
+      // Fade the text out, swap it, fade back in.
+      clearTimeout(swapTimer);
+      if (instant) { fill(it); return; }
+      textFields.classList.add("swapping");
+      swapTimer = setTimeout(function () { fill(it); textFields.classList.remove("swapping"); }, 260);
+    }
+
+    function fill(it) {
       titleEl.textContent = UI.title(it);
       metaEl.textContent = [UI.year(it), it.media_type === "tv" ? "TV Series" : "Movie",
         it.vote_average ? "★ " + it.vote_average.toFixed(1) : ""].filter(Boolean).join("   ·   ");
@@ -44,7 +68,7 @@ Screens.home = function () {
       for (var d = 0; d < dots.children.length; d++) dots.children[d].classList.toggle("on", d === heroIndex);
     }
     heroEl.__show = show;
-    show(0);
+    show(0, true);
     startRotation();
     return heroEl;
   }
@@ -84,6 +108,7 @@ Screens.home = function () {
       if (it.season) cards[i].querySelector(".card-meta").textContent = "S" + it.season + " · E" + it.episode;
     });
     r.classList.add("continue-row");
+    r.__sig = JSON.stringify(hist.slice(0, 20).map(function (x) { return [x.id, x.season, x.episode]; }));
     return r;
   }
 
@@ -131,8 +156,15 @@ Screens.home = function () {
       if (first) return;
       // Refresh "Continue watching" after returning from the player
       var old = scroller.querySelector(".continue-row");
+      var sig = JSON.stringify(Store.history().slice(0, 20).map(function (x) { return [x.id, x.season, x.episode]; }));
+      if (old && old.__sig === sig) return;          // nothing changed: keep focus & position
       var fresh = continueRow();
-      if (old && fresh) scroller.replaceChild(fresh, old);
+      if (!fresh) return;
+      fresh.__sig = sig;
+      // If the user came from this row, land on the first card (the item just watched).
+      var entry = App.top();
+      if (old && entry && entry.lastFocus && old.contains(entry.lastFocus)) entry.lastFocus = fresh.querySelector(".card");
+      if (old) scroller.replaceChild(fresh, old);
       else if (!old && fresh && scroller.children[0]) scroller.insertBefore(fresh, scroller.children[1] || null);
     },
     onKey: function (key) {

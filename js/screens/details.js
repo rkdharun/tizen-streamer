@@ -52,7 +52,13 @@ Screens.details = function (params) {
 
   function render(d) {
     data = d;
-    bg.style.backgroundImage = d.backdrop_path ? "url(" + TMDB.img(d.backdrop_path, "w1280") + ")" : "";
+    if (d.backdrop_path) {
+      // Fade the backdrop in once it has actually loaded (no half-drawn image pop)
+      var url = TMDB.img(d.backdrop_path, "w1280");
+      var pre = new Image();
+      pre.onload = function () { bg.style.backgroundImage = "url(" + url + ")"; bg.classList.add("on"); };
+      pre.src = url;
+    }
     scroller.innerHTML = "";
 
     playBtn = UI.button("Play", "play", function () {
