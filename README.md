@@ -66,6 +66,11 @@ Interact, and BACK always works:
 | FF / REW | Seek ±30 s |
 | ▲ ▼ | Open the player menu (sources, shield, episodes) |
 
+**Subtitles:** open the menu (▲) and choose **Subtitles** to pick a language. The app asks VidFast
+which languages exist for that title (falling back to a common list) and reloads the player at the
+same position with `sub=<code>`. Quality adjusts automatically to your connection. VidFast has no
+quality setting.
+
 The app remembers where you stopped and resumes there next time (`{start}` in the source URL).
 TV episodes go straight to the next one when an episode ends.
 

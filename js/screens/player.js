@@ -93,6 +93,7 @@ Screens.player = function (params) {
     if (tpl.indexOf("{imdb}") >= 0 && !imdb) return null;
     var start = Math.floor(Store.position(item, type === "tv" ? { season: season, episode: episode } : null) || 0);
     return tpl.replace(/\{start\}/g, start)
+              .replace(/\{sub\}/g, encodeURIComponent(Store.getSetting("subLang", "")))
               .replace(/\{tmdb\}/g, item.id)
               .replace(/\{imdb\}/g, imdb)
               .replace(/\{season\}/g, season)
@@ -222,6 +223,7 @@ Screens.player = function (params) {
       add("prev", "Prev", "prev", function () { goEpisode(-1); }, !neighbour(-1));
       add("next", "Next episode", "next", function () { goEpisode(1); }, !neighbour(1));
     }
+    if (supportsSubs()) add("subs", "Subtitles", "cc", toggleSubsPanel);
     add("sources", "Sources", "server", toggleSourcePanel);
     add("shield", LEVEL_LABEL[shieldLevel()], "shield", toggleShield).classList.toggle("off", shieldLevel() !== "strict");
     add("reload", "Reload", "reload", function () { guardOff = false; blockedCount = 0; load(); });
@@ -244,28 +246,94 @@ Screens.player = function (params) {
     load();
   }
 
-  function toggleSourcePanel() {
-    if (sourcePanel.classList.contains("open")) { closeSourcePanel(); return; }
+  // Generic picker panel above the control bar (sources, subtitles).
+  // items: [{label, icon, active, pick}]
+  function openPanel(owner, items) {
+    if (sourcePanel.classList.contains("open") && sourcePanel.__owner === owner) { closePanel(); return; }
     sourcePanel.innerHTML = "";
-    sources.forEach(function (s, i) {
-      var b = UI.button(s.name, i === sourceIdx ? "check" : "server", function () {
-        sourceIdx = i;
-        Store.setSetting("source", s.id);
-        guardOff = false; blockedCount = 0;
-        closeSourcePanel();
-        load();
-      }, i === sourceIdx ? "active" : "");
+    sourcePanel.__owner = owner;
+    var activeBtn = null;
+    items.forEach(function (it) {
+      var b = UI.button(it.label, it.active ? "check" : it.icon, function () { closePanel(); it.pick(); }, it.active ? "active" : "");
       sourcePanel.appendChild(b);
+      if (it.active) activeBtn = b;
     });
     sourcePanel.classList.add("open");
-    Nav.focus(sourcePanel.children[sourceIdx]);
+    Nav.focus(activeBtn || sourcePanel.firstChild);
     bumpOverlay();
   }
 
-  function closeSourcePanel() {
+  function closePanel() {
     sourcePanel.classList.remove("open");
-    var b = controls.querySelector('[data-id="sources"]');
+    var b = controls.querySelector('[data-id="' + (sourcePanel.__owner || "sources") + '"]');
     if (b) Nav.focus(b);
+  }
+
+  function toggleSourcePanel() {
+    openPanel("sources", sources.map(function (src, i) {
+      return {
+        label: src.name, icon: "server", active: i === sourceIdx,
+        pick: function () {
+          sourceIdx = i;
+          Store.setSetting("source", src.id);
+          guardOff = false; blockedCount = 0;
+          load();
+        }
+      };
+    }));
+  }
+
+  // ---- subtitles (sources whose URL takes {sub}) ----
+  var SUB_FALLBACK = [
+    ["en", "English"], ["es", "Spanish"], ["fr", "French"], ["de", "German"], ["it", "Italian"],
+    ["pt", "Portuguese"], ["ar", "Arabic"], ["hi", "Hindi"], ["ta", "Tamil"], ["te", "Telugu"],
+    ["ml", "Malayalam"], ["ja", "Japanese"], ["ko", "Korean"], ["zh", "Chinese"]
+  ];
+  var subCache = {};
+
+  function supportsSubs() {
+    var src = sources[sourceIdx];
+    return (src.movie || "").indexOf("{sub}") >= 0 || (src.tv || "").indexOf("{sub}") >= 0;
+  }
+
+  // Ask the source which languages exist for this title; fall back to a fixed list.
+  function subLanguages() {
+    var src = sources[sourceIdx];
+    if (!src.subsList) return Promise.resolve(SUB_FALLBACK);
+    var url = src.subsList.replace(/\{tmdb\}/g, item.id) +
+      (type === "tv" ? "&season=" + season + "&episode=" + episode : "");
+    if (subCache[url]) return Promise.resolve(subCache[url]);
+    return fetch(url).then(function (r) { return r.json(); }).then(function (list) {
+      var seen = {}, langs = [];
+      (list || []).forEach(function (x) {
+        if (x && x.language && !seen[x.language]) { seen[x.language] = 1; langs.push([x.language, x.display || x.language]); }
+      });
+      langs.sort(function (a, b) { return a[1].localeCompare(b[1]); });
+      if (!langs.length) throw new Error("empty");
+      subCache[url] = langs;
+      return langs;
+    }).catch(function () { return SUB_FALLBACK; });
+  }
+
+  function toggleSubsPanel() {
+    if (sourcePanel.classList.contains("open") && sourcePanel.__owner === "subs") { closePanel(); return; }
+    var current = Store.getSetting("subLang", "");
+    subLanguages().then(function (langs) {
+      var items = [{ label: "Off", icon: "close", active: !current, pick: function () { setSub(""); } }];
+      langs.forEach(function (l) {
+        items.push({ label: l[1], icon: "cc", active: current === l[0], pick: function () { setSub(l[0]); } });
+      });
+      openPanel("subs", items);
+    });
+  }
+
+  function setSub(code) {
+    if (code === Store.getSetting("subLang", "")) return;
+    Store.setSetting("subLang", code);
+    // Reload the player at the current position with the new subtitle language
+    if (rc.t > 0) Store.setPosition(item, type === "tv" ? { season: season, episode: episode } : null, rc.t, rc.dur);
+    UI.toast(code ? "Subtitles: " + code.toUpperCase() : "Subtitles off");
+    load();
   }
 
   function nextSource() {
@@ -477,7 +545,7 @@ Screens.player = function (params) {
       if (!key) return false;
 
       if (key === "back") {
-        if (sourcePanel.classList.contains("open")) { closeSourcePanel(); return true; }
+        if (sourcePanel.classList.contains("open")) { closePanel(); return true; }
         return false;   // App.back() closes the player
       }
       // Remote-control mode: with the menu hidden, keys drive the player directly.

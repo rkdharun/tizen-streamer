@@ -14,6 +14,8 @@
  *   control: "postmessage" -> source accepts {command:"play"|"pause"|"seek"} messages and
  *            sends PLAYER_EVENT updates; the remote then controls playback directly.
  *   {start} -> resume position in seconds (0 if none).
+ *   {sub}   -> subtitle language code chosen in the player menu ("" = off).
+ *   subsList -> optional URL returning [{language, display}] to list available subtitles.
  */
 var CONFIG = {
   TMDB_API_KEY: "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5YTBjMzkzOWM4MTg1ZWNkYmEwMDQwZjJhNDE2N2I3MCIsIm5iZiI6MTczMTQ4NTE3OC4wNjkyOTAyLCJzdWIiOiI2NzM0NWQ0MDljMWEyMzhkOGE5ZDM5MTUiLCJzY29wZXMiOlsiYXBpX3JlYWQiXSwidmVyc2lvbiI6MX0.YQcc2sBHfT9DdFH3Kqas7oPPDKSJuHOEQu2LlvAySZs",
@@ -28,10 +30,11 @@ var CONFIG = {
     {
       id: "vidfast",
       name: "VidFast",
-      movie: "https://vidfast.pro/movie/{tmdb}?autoPlay=true&startAt={start}",
-      tv: "https://vidfast.pro/tv/{tmdb}/{season}/{episode}?autoPlay=true&startAt={start}",
+      movie: "https://vidfast.pro/movie/{tmdb}?autoPlay=true&startAt={start}&sub={sub}",
+      tv: "https://vidfast.pro/tv/{tmdb}/{season}/{episode}?autoPlay=true&startAt={start}&sub={sub}",
       shield: "strict",
-      control: "postmessage"   // remote drives play/pause/seek directly
+      control: "postmessage",  // remote drives play/pause/seek directly
+      subsList: "https://vidfast.vc/wyzie?id={tmdb}"   // languages available per title
     },
     {
       id: "2embed",

@@ -287,12 +287,11 @@ html, body {
 .pl-controls .btn { height: 68px; padding: 0 30px; font-size: 25px; margin-right: 16px; }
 .source-panel {
   display: none; position: absolute; bottom: 170px; left: 80px;
-  padding: 20px; border-radius: 22px; background: rgba(21,21,29,.96);
-  flex-direction: column;
+  padding: 20px 8px 8px 20px; border-radius: 22px; background: rgba(21,21,29,.96);
+  flex-wrap: wrap; max-width: 1240px;
 }
 .source-panel.open { display: flex; }
-.source-panel .btn { margin: 0 0 12px 0; width: 380px; border-radius: 16px; }
-.source-panel .btn:last-child { margin-bottom: 0; }
+.source-panel .btn { margin: 0 12px 12px 0; width: 380px; border-radius: 16px; }
 .interact-pill {
   display: none; position: absolute; top: 30px; left: 50%; transform: translateX(-50%);
   padding: 14px 30px; border-radius: 30px; background: rgba(0,0,0,.8);
