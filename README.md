@@ -88,6 +88,35 @@ quality setting.
 The app remembers where you stopped and resumes there next time (`{start}` in the source URL).
 TV episodes go straight to the next one when an episode ends.
 
+### Built-in player (recommended)
+Embedded players belong to other websites, so the app can't click inside them. The built-in
+player plays **direct streams** in ReelTV's own `<video>` (hls.js for HLS), so every control is
+an app button and works with the remote, like Nuvio or Stremio on TVs.
+
+1. **Settings → Stream addons**: add one or more Stremio-compatible addon URLs
+   (`https://…/manifest.json`, comma-separated). None are built in.
+2. Press **Play**. The app asks each addon for streams
+   (`/stream/movie/<imdb>.json`, `/stream/series/<imdb>:<s>:<e>.json`) and plays the first that works,
+   skipping broken ones automatically. If none work, it falls back to the embed sources.
+
+| Key | Action |
+|---|---|
+| OK / ▶❙❙ | Play / pause |
+| ◀ ▶ | Seek ∓10 s (hold: 30 s, then 60 s) · FF/REW ±30 s |
+| ▲ ▼ | Menu: Subtitles · Quality · Audio · Streams · Prev/Next · Embed sources |
+| RED | Subtitles |
+| CH+ / CH− | Next / previous episode |
+| BACK | Close the panel / menu, then the player |
+
+- **Subtitles** come from the public OpenSubtitles addon (and from the stream, if it has any).
+  SRT is converted to WebVTT. Your last language is picked automatically next time.
+- **Quality** and **Audio** list the stream's own HLS levels and audio tracks.
+- Resume, auto-next episode and Continue watching work as with the other sources.
+- Limitation: streams that need special request headers (an addon's `proxyHeaders`) usually
+  can't play on Tizen without a relay server. They're tried last and marked ⚠ in Streams.
+- Dev: `python3 dev-server.py` serves a test addon at `http://localhost:8765/dev-addon` with
+  public test streams.
+
 ### Clicking inside the player (subtitles, quality, servers)
 An app can't click inside another website's player (browser security), and **Interact does not
 show a cursor**. It only forwards the arrow/OK keys for a few seconds. Two things do work:
@@ -152,6 +181,8 @@ js/tmdb.js            TMDB client (cached)
 js/storage.js         settings / My List / history
 js/ui.js              cards, rows, buttons, toast
 js/screens/*.js       home, browse (movies/tv/anime), search, details, player, mylist, options (= Settings; not named settings.js because the Tizen packager drops it)
+js/addons.js          Stremio-protocol stream + subtitle addons (built-in player)
+js/vendor/hls.min.js  hls.js 1.5.20 (HLS playback, quality/audio tracks)
 js/dev-mock.js        ?mock fake data for desktop testing
 ```
 

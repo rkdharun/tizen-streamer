@@ -41,9 +41,18 @@ Screens.settings = function () {
 
   function finishEdit(save) {
     if (!editing) return;
+    var which = editing;
     keyRow.classList.remove("editing");
-    editing.blur();
+    addonRow.classList.remove("editing");
+    which.blur();
     editing = null;
+    if (which === addonInput) {
+      if (!save) { addonInput.value = Addons.list().join(", "); return; }
+      var saved = Addons.setFromText(addonInput.value);
+      addonInput.value = saved.join(", ");
+      UI.toast(saved.length ? saved.length + " addon(s) saved. Play now uses the built-in player" : "Addons cleared. Play uses embed sources");
+      return;
+    }
     if (!save) { keyInput.value = Store.getSetting("tmdbKey", "") || CONFIG.TMDB_API_KEY || ""; return; }
     var v = keyInput.value.trim();
     Store.setSetting("tmdbKey", v);
@@ -54,6 +63,24 @@ Screens.settings = function () {
       buttons: [{ label: "Go Home", autofocus: true, action: function () { App.go("home"); } }, { label: "Stay" }]
     });
   }
+
+  // --- stream addons (built-in player) ---
+  var addonInput = h("input", { class: "text-input", type: "text", placeholder: "https://…/manifest.json (comma-separate several)", autocomplete: "off", spellcheck: "false" });
+  addonInput.value = Addons.list().join(", ");
+  var addonRow = h("div", { class: "setting focusable input-row" }, [
+    h("div", { class: "setting-text" }, [
+      h("div", { class: "setting-label", text: "Stream addons (built-in player)" }),
+      h("div", { class: "setting-desc", text: "Stremio-compatible addon URLs that return direct streams. When set, Play uses ReelTV's own player (remote-controlled subtitles, quality, audio). Leave empty to use embed sources." })
+    ]),
+    addonInput
+  ]);
+  addonRow.addEventListener("click", function () {
+    if (editing) return;
+    editing = addonInput;
+    addonRow.classList.add("editing");
+    addonInput.focus();
+  });
+  list.appendChild(addonRow);
 
   // --- other settings ---
   row("Preferred source", function () {

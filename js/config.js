@@ -38,6 +38,12 @@ var CONFIG = {
   PREFERRED_PROVIDERS: [8, 119, 9, 337, 2336, 122, 350, 1899, 384, 15, 232, 237, 309, 283, 531, 386, 532, 11],
   SKIP_PROVIDERS: [2, 3, 10, 192, 2285, 538, 7, 68, 35],
 
+  // Built-in player: Stremio-protocol addons that return direct stream URLs.
+  // None are built in. Add yours in Settings → Stream addons (or list base URLs here).
+  STREAM_ADDONS: [],
+  // Subtitle addons (Stremio protocol). OpenSubtitles' public addon allows CORS.
+  SUBTITLE_ADDONS: ["https://opensubtitles-v3.strem.io"],
+
   // Seconds the remote stays "inside" the player after choosing Interact.
   INTERACT_SECONDS: 12,
 
