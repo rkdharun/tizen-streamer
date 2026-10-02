@@ -30,6 +30,16 @@ Screens.player = function (params) {
   var clickShield = h("div", { class: "click-shield", onclick: function () { showOverlay(); } });
   var interactPill = h("div", { class: "interact-pill" });
 
+  // Remote-control OSD (only for sources with a postMessage control API, e.g. VidFast)
+  var osdIcon = h("span", { class: "osd-icon" });
+  var osdTime = h("span", { class: "osd-time" });
+  var osdFill = h("div", { class: "osd-fill" });
+  var osdSeek = h("div", { class: "osd-seek" });
+  var osd = h("div", { class: "rc-osd" }, [
+    h("div", { class: "osd-row" }, [osdIcon, osdSeek, osdTime]),
+    h("div", { class: "osd-bar" }, [osdFill])
+  ]);
+
   var titleEl = h("div", { class: "pl-title" });
   var subEl = h("div", { class: "pl-sub" });
   var sourceLabel = h("div", { class: "pl-source" });
@@ -42,13 +52,16 @@ Screens.player = function (params) {
   ]);
 
   // Loader sits *behind* the iframe: it shows until the embed paints its own background.
-  var holder = h("div", { class: "player", tabindex: "-1" }, [loader, frameHost, clickShield, overlay, interactPill]);
+  var holder = h("div", { class: "player", tabindex: "-1" }, [loader, frameHost, clickShield, osd, overlay, interactPill]);
 
   var iframe = null;
   var loads = 0, firstLoadAt = 0, blockedCount = 0, guardOff = false;
   var overlayTimer = null, interactTick = null, focusGuard = null, loadTimeout = null;
   var interacting = false;
   var episodeName = "";
+
+  // Remote control state, fed by the embed's PLAYER_EVENT messages.
+  var rc = { active: false, playing: false, t: 0, dur: 0, pending: null, sendTimer: null, osdTimer: null, holdStart: 0, saveAt: 0 };
 
   function indexOfSource(id) {
     for (var i = 0; i < sources.length; i++) if (sources[i].id === id) return i;
@@ -78,7 +91,9 @@ Screens.player = function (params) {
     if (!tpl) return null;
     var imdb = (item.external_ids && item.external_ids.imdb_id) || item.imdb_id || "";
     if (tpl.indexOf("{imdb}") >= 0 && !imdb) return null;
-    return tpl.replace(/\{tmdb\}/g, item.id)
+    var start = Math.floor(Store.position(item, type === "tv" ? { season: season, episode: episode } : null) || 0);
+    return tpl.replace(/\{start\}/g, start)
+              .replace(/\{tmdb\}/g, item.id)
               .replace(/\{imdb\}/g, imdb)
               .replace(/\{season\}/g, season)
               .replace(/\{episode\}/g, episode);
@@ -90,6 +105,7 @@ Screens.player = function (params) {
     if (iframe) { iframe.src = "about:blank"; frameHost.removeChild(iframe); iframe = null; }
     loads = 0; firstLoadAt = 0;
     clearTimeout(loadTimeout);
+    resetRc();
 
     if (!url) {
       loader.style.display = "";
@@ -200,6 +216,7 @@ Screens.player = function (params) {
       controls.appendChild(b);
       return b;
     }
+    if (rc.active) add("playpause", rc.playing ? "Pause" : "Play", rc.playing ? "pause" : "play", function () { togglePlay(); buildControls(); });
     add("interact", "Interact", "hand", startInteract);
     if (type === "tv") {
       add("prev", "Prev", "prev", function () { goEpisode(-1); }, !neighbour(-1));
@@ -261,10 +278,12 @@ Screens.player = function (params) {
 
   // ---- overlay visibility ----
   function showOverlay() {
+    holder.classList.remove("osd-show");
     var wasHidden = !overlay.classList.contains("show");
     overlay.classList.add("show");
     if (wasHidden || !Nav.current() || !overlay.contains(Nav.current())) {
-      Nav.focus(controls.querySelector('[data-id="' + (type === "tv" ? "next" : "interact") + '"]:not(.disabled)') ||
+      var first = rc.active ? "playpause" : (type === "tv" ? "next" : "interact");
+      Nav.focus(controls.querySelector('[data-id="' + first + '"]:not(.disabled)') ||
                 controls.querySelector(".btn"));
     }
     bumpOverlay();
@@ -285,6 +304,119 @@ Screens.player = function (params) {
   // ---- focus handling ----
   function reclaimFocus() {
     try { window.focus(); holder.focus(); } catch (e) {}
+  }
+
+  // ---- remote control (postMessage API) ----
+  function supportsControl() { return !!sources[sourceIdx].control; }
+
+  function resetRc() {
+    clearTimeout(rc.sendTimer); clearTimeout(rc.osdTimer);
+    rc.active = false; rc.playing = false; rc.t = 0; rc.dur = 0; rc.pending = null;
+    holder.classList.remove("rc-on", "osd-show");
+  }
+
+  function send(msg) {
+    try { iframe.contentWindow.postMessage(msg, "*"); } catch (e) {}
+  }
+
+  function onMessage(e) {
+    if (!iframe || e.source !== iframe.contentWindow || !supportsControl()) return;
+    var msg = e.data;
+    if (typeof msg === "string") { try { msg = JSON.parse(msg); } catch (x) { return; } }
+    if (!msg || msg.type !== "PLAYER_EVENT" || !msg.data) return;
+    var d = msg.data;
+    if (!rc.active) {
+      rc.active = true;
+      holder.classList.add("rc-on");
+      loader.style.display = "none";
+      UI.toast("Remote connected · OK play/pause · ◀ ▶ seek · ▲ menu", 4000);
+      hideOverlay();               // keys go straight to the player from now on
+      buildControls();
+    }
+    if (typeof d.currentTime === "number" && rc.pending === null) rc.t = d.currentTime;
+    if (typeof d.duration === "number" && d.duration > 0) rc.dur = d.duration;
+    if (d.event === "play") rc.playing = true;
+    else if (d.event === "pause") rc.playing = false;
+    else if (typeof d.playing === "boolean") rc.playing = d.playing;
+    renderOsd();
+    if (!rc.playing) showOsd(true);
+
+    // Remember the position for resume (throttled)
+    var now = Date.now();
+    if (rc.t > 0 && now - rc.saveAt > 5000) {
+      rc.saveAt = now;
+      Store.setPosition(item, type === "tv" ? { season: season, episode: episode } : null, rc.t, rc.dur);
+    }
+    if (d.event === "ended" && type === "tv" && neighbour(1)) {
+      UI.toast("Playing next episode");
+      goEpisode(1);
+    }
+  }
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var hh = Math.floor(sec / 3600), mm = Math.floor(sec % 3600 / 60), ss = sec % 60;
+    return (hh ? hh + ":" + (mm < 10 ? "0" : "") : "") + mm + ":" + (ss < 10 ? "0" : "") + ss;
+  }
+
+  function renderOsd() {
+    var t = rc.pending !== null ? rc.pending : rc.t;
+    osdTime.textContent = fmt(t) + " / " + (rc.dur ? fmt(rc.dur) : "--:--");
+    osdFill.style.transform = "scaleX(" + (rc.dur ? Math.min(1, t / rc.dur) : 0) + ")";
+    osdIcon.innerHTML = "";
+    osdIcon.appendChild(UI.icon(rc.playing ? "play" : "pause"));
+    if (rc.pending !== null) {
+      var delta = Math.round(rc.pending - rc.t);
+      osdSeek.textContent = (delta >= 0 ? "+" : "−") + fmt(Math.abs(delta));
+    } else osdSeek.textContent = "";
+  }
+
+  function showOsd(stay) {
+    holder.classList.add("osd-show");
+    clearTimeout(rc.osdTimer);
+    if (!stay) rc.osdTimer = setTimeout(function () { if (rc.playing) holder.classList.remove("osd-show"); }, 2500);
+  }
+
+  function togglePlay(force) {
+    var play = force === undefined ? !rc.playing : force;
+    send({ command: play ? "play" : "pause" });
+    rc.playing = play;           // optimistic; corrected by the next event
+    renderOsd();
+    showOsd(!play);
+  }
+
+  // Seek accumulates while keys are pressed, then sends one absolute seek.
+  function seekBy(delta) {
+    var base = rc.pending !== null ? rc.pending : rc.t;
+    var target = Math.max(0, base + delta);
+    if (rc.dur) target = Math.min(target, rc.dur - 1);
+    rc.pending = target;
+    renderOsd();
+    showOsd();
+    clearTimeout(rc.sendTimer);
+    rc.sendTimer = setTimeout(function () {
+      send({ command: "seek", time: rc.pending });
+      rc.t = rc.pending;
+      rc.pending = null;
+      renderOsd();
+    }, 450);
+  }
+
+  function rcKey(key, evt) {
+    var repeat = evt && evt.repeat;
+    if (key === "enter" || key === "playpause") { togglePlay(); return true; }
+    if (key === "play") { togglePlay(true); return true; }
+    if (key === "pause") { togglePlay(false); return true; }
+    if (key === "left" || key === "right") {
+      if (!repeat) rc.holdStart = Date.now();
+      var held = Date.now() - rc.holdStart;
+      var step = held > 3000 ? 60 : held > 1200 ? 30 : 10;     // accelerate while held
+      seekBy(key === "right" ? step : -step);
+      return true;
+    }
+    if (key === "ff" || key === "rew") { seekBy(key === "ff" ? 30 : -30); return true; }
+    if (key === "up" || key === "down") { showOverlay(); return true; }
+    return false;
   }
 
   function startInteract() {
@@ -333,13 +465,14 @@ Screens.player = function (params) {
   fetchEpisodeName();
   window.addEventListener("blur", onWindowBlur);
   window.addEventListener("focus", onWindowFocus);
+  window.addEventListener("message", onMessage);
   startFocusGuard();
   setTimeout(showOverlay, 0);
 
   return {
     el: holder,
     fullscreen: true,
-    onKey: function (key) {
+    onKey: function (key, evt) {
       if (interacting) { endInteract(); showOverlay(); return true; }
       if (!key) return false;
 
@@ -347,6 +480,9 @@ Screens.player = function (params) {
         if (sourcePanel.classList.contains("open")) { closeSourcePanel(); return true; }
         return false;   // App.back() closes the player
       }
+      // Remote-control mode: with the menu hidden, keys drive the player directly.
+      if (rc.active && !overlay.classList.contains("show") && rcKey(key, evt)) return true;
+
       if (key === "chup" || key === "ff") { if (type === "tv") goEpisode(1); return true; }
       if (key === "chdown" || key === "rew") { if (type === "tv") goEpisode(-1); return true; }
       if (key === "yellow") { nextSource(); return true; }
@@ -366,6 +502,9 @@ Screens.player = function (params) {
       clearInterval(interactTick); clearInterval(focusGuard);
       window.removeEventListener("blur", onWindowBlur);
       window.removeEventListener("focus", onWindowFocus);
+      window.removeEventListener("message", onMessage);
+      clearTimeout(rc.sendTimer); clearTimeout(rc.osdTimer);
+      if (rc.t > 0) Store.setPosition(item, type === "tv" ? { season: season, episode: episode } : null, rc.t, rc.dur);
       if (iframe) { iframe.src = "about:blank"; }
     }
   };

@@ -300,6 +300,21 @@ html, body {
 }
 .player.interacting .interact-pill { display: block; }
 
+/* Remote-control OSD (time bar) */
+.rc-osd {
+  position: absolute; left: 80px; right: 80px; bottom: 56px;
+  padding: 22px 30px 26px; border-radius: 22px; background: rgba(0,0,0,.72);
+  opacity: 0; transform: translate3d(0, 20px, 0); pointer-events: none;
+  transition: opacity .25s ease, transform .25s cubic-bezier(.22,.7,.25,1);
+}
+.player.osd-show .rc-osd { opacity: 1; transform: none; }
+.osd-row { display: flex; align-items: center; margin-bottom: 16px; }
+.osd-icon .icon { width: 34px; height: 34px; }
+.osd-seek { margin-left: 22px; font-size: 30px; font-weight: 800; color: var(--accent-2); }
+.osd-time { margin-left: auto; font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.osd-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.25); overflow: hidden; }
+.osd-fill { height: 100%; background: var(--accent); transform-origin: 0 50%; transform: scaleX(0); transition: transform .3s linear; }
+
 /* ---------------- Settings ---------------- */
 .settings-list { padding: 0 60px; width: 1400px; }
 .setting {
@@ -355,3 +370,6 @@ html, body {
   transition: opacity .2s, transform .2s;
 }
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+/* Keep toasts clear of the player time bar */
+#app.fullscreen-mode #toast { bottom: 230px; }

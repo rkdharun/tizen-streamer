@@ -30,6 +30,7 @@ var UI = (function () {
     list: '<path d="M6 3h12v18l-6-4-6 4z"/>',
     settings: '<circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M4.9 19.1L7 17 M17 7l2.1-2.1" stroke="currentColor" stroke-width="2"/>',
     play: '<path d="M7 4l13 8-13 8z"/>',
+    pause: '<path d="M6 4h4v16H6z M14 4h4v16h-4z"/>',
     plus: '<path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"/>',
     check: '<path d="M9 16.2l-4.2-4.2-1.4 1.4L9 19 21 7l-1.4-1.4z"/>',
     star: '<path d="M12 2l2.9 6.9L22 9.6l-5.4 4.7L18.2 22 12 18.3 5.8 22l1.6-7.7L2 9.6l7.1-.7z"/>',

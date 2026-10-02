@@ -55,6 +55,20 @@ they can open a popup and show "Please Disable Sandbox" otherwise. The test brow
 popup, so their real TV behaviour is unknown: try "popups ok" first on the TV, then "off".
 VidSrc and MultiEmbed were blocked by the test network.
 
+### Remote control (VidFast)
+VidFast lets the app send it commands, so the remote controls playback directly. You don't need
+Interact, and BACK always works:
+
+| Key | Action |
+|---|---|
+| OK / ▶❙❙ | Play / pause |
+| ◀ ▶ | Seek ∓10 s (hold to speed up to 30 s, then 60 s) |
+| FF / REW | Seek ±30 s |
+| ▲ ▼ | Open the player menu (sources, shield, episodes) |
+
+The app remembers where you stopped and resumes there next time (`{start}` in the source URL).
+TV episodes go straight to the next one when an episode ends.
+
 ### About Interact
 Key presses go to whichever frame has focus. While the embed is focused the app cannot see
 any keys, including BACK. That's why **Interact** hands the remote to the player only for a

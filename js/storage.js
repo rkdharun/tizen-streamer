@@ -65,8 +65,11 @@ var Store = (function () {
       var list = this.history();
       var k = key(item);
       list = list.filter(function (h) { return key(h) !== k; });
+      var prev = this.history().filter(function (h) { return key(h) === k; })[0];
       var entry = slim(item);
       if (progress) { entry.season = progress.season; entry.episode = progress.episode; }
+      var sameEp = prev && (!progress || (prev.season === progress.season && prev.episode === progress.episode));
+      if (sameEp && prev.pos) { entry.pos = prev.pos; entry.dur = prev.dur; }
       entry.watchedAt = Date.now();
       list.unshift(entry);
       write("history", list.slice(0, 40));
@@ -75,6 +78,27 @@ var Store = (function () {
       var k = key(item);
       var h = this.history().filter(function (x) { return key(x) === k; })[0];
       return h && h.season ? { season: h.season, episode: h.episode } : null;
+    },
+    // Playback position (seconds) for resume. ep = {season, episode} for TV.
+    setPosition: function (item, ep, pos, dur) {
+      var list = this.history();
+      var k = key(item);
+      for (var i = 0; i < list.length; i++) {
+        if (key(list[i]) !== k) continue;
+        if (ep && (list[i].season !== ep.season || list[i].episode !== ep.episode)) return;
+        // Finished (last 3%)? Start from the beginning next time.
+        list[i].pos = dur && pos > dur * 0.97 ? 0 : Math.floor(pos);
+        list[i].dur = Math.floor(dur || 0);
+        write("history", list);
+        return;
+      }
+    },
+    position: function (item, ep) {
+      var k = key(item);
+      var h = this.history().filter(function (x) { return key(x) === k; })[0];
+      if (!h || !h.pos) return 0;
+      if (ep && (h.season !== ep.season || h.episode !== ep.episode)) return 0;
+      return h.pos;
     },
     removeHistory: function (item) {
       var k = key(item);
