@@ -54,6 +54,7 @@ On a desktop keyboard: arrows, Enter, Esc/Backspace = Back, PageUp/PageDown = CH
 | Source | Autoplay | Remote control (OK / ◀ ▶) | Resume | Subtitle menu | Needs shield |
 |---|---|---|---|---|---|
 | **VidFast** | ✅ | ✅ commands via postMessage | ✅ `startAt` | ✅ `sub` + language list | plays on your TV (level you used) |
+| **VidCore** (reelix.ac's player) | ✅ | ? same codebase as VidFast; connects automatically if supported | ✅ `startAt` | ✅ `sub` + language list | refuses Strict (like VidFast) |
 | 2Embed | ❌ click-to-play wrapper | ❌ | ❌ | ❌ | strict loads, inner player refuses sandbox |
 | 2Embed · Vsrc / Videm | ✅ `autoplay=1` | ❌ (Interact: arrows seek) | its own prompt | ❌ | **off** (rejects any sandbox) |
 | VidLink | ✅ | ❌ events only | ✅ `startAt` + saved position | ❌ (only an external file) | **off** (rejects sandbox); calls an ad link on play/end |

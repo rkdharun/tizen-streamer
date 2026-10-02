@@ -37,6 +37,17 @@ var CONFIG = {
       subsList: "https://vidfast.vc/wyzie?id={tmdb}"   // languages available per title
     },
     {
+      // Used by reelix.ac. Same player codebase as VidFast (identical scripts and settings).
+      // Remote control turns on automatically if it answers like VidFast does.
+      id: "vidcore",
+      name: "VidCore",
+      movie: "https://vidcore.io/movie/{tmdb}?autoPlay=true&autoNext=true&startAt={start}&sub={sub}",
+      tv: "https://vidcore.io/tv/{tmdb}/{season}/{episode}?autoPlay=true&autoNext=true&startAt={start}&sub={sub}",
+      shield: "strict",
+      control: "postmessage",
+      subsList: "https://vidcore.io/wyzie?id={tmdb}"
+    },
+    {
       id: "2embed",
       name: "2Embed",
       movie: "https://www.2embed.cc/embed/{tmdb}",
