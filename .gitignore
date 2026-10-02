@@ -1,0 +1,4 @@
+*.wgt
+.buildResult/
+.DS_Store
+__pycache__/

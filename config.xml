@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:tizen="http://tizen.org/ns/widgets"
+        id="http://reeltv.local/app"
+        version="1.0.0"
+        viewmodes="maximized">
+
+    <tizen:application id="ReelTVApp1.ReelTV" package="ReelTVApp1" required_version="4.0"/>
+    <tizen:profile name="tv-samsung"/>
+
+    <name>ReelTV</name>
+    <description>Browse movies, TV shows and anime with the remote.</description>
+    <icon src="icon.png"/>
+    <content src="index.html"/>
+
+    <feature name="http://tizen.org/feature/screen.size.normal.1080.1920"/>
+
+    <!-- Network access for TMDB + embed providers (iframes) -->
+    <access origin="*" subdomains="true"/>
+
+    <!-- The app's top-level document must never navigate away (blocks top-frame ad redirects).
+         Intentionally no <tizen:allow-navigation> entries for external hosts. -->
+
+    <tizen:privilege name="http://tizen.org/privilege/internet"/>
+    <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
+
+    <tizen:content-security-policy>default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; img-src * data: blob:</tizen:content-security-policy>
+
+    <tizen:setting screen-orientation="landscape"
+                   context-menu="disable"
+                   background-support="disable"
+                   encryption="disable"
+                   install-location="auto"
+                   hwkey-event="enable"/>
+</widget>
