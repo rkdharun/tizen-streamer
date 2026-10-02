@@ -66,7 +66,8 @@ var Addons = (function () {
     return Promise.all(urls.map(function (u) {
       return getJson(u + "/manifest.json").then(function (m) {
         var res = (m.resources || []).map(function (r) { return typeof r === "string" ? r : r && r.name; });
-        info[u] = { name: m.name || host(u), stream: res.indexOf("stream") >= 0, resources: res };
+        var bh = m.behaviorHints || {};
+        info[u] = { name: m.name || host(u), stream: res.indexOf("stream") >= 0, resources: res, needsSetup: !!bh.configurationRequired };
       }).catch(function () { info[u] = { name: host(u), stream: null, error: true }; });
     })).then(function () {
       Store.setSetting("addonInfo", info);

@@ -56,7 +56,8 @@ Screens.settings = function () {
         var msg = res.map(function (r) {
           var i = r.info || {};
           if (i.error) return (i.name || r.url) + ": couldn't reach it";
-          if (!i.stream) return i.name + ": no streams (" + (i.resources || []).join("/") + " only), ignored";
+          if (i.needsSetup) return i.name + ": needs to be configured first (use its personal URL), ignored";
+          if (!i.stream) return i.name + ": no streams (" + ((i.resources || []).join("/") || "nothing") + " only), ignored";
           return i.name + ": streams ✓";
         }).join("  ·  ");
         UI.toast(msg, 7000);
