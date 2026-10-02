@@ -50,7 +50,17 @@ Screens.settings = function () {
       if (!save) { addonInput.value = Addons.userList().join(", "); return; }
       var saved = Addons.setFromText(addonInput.value);
       addonInput.value = saved.join(", ");
-      UI.toast(saved.length ? saved.length + " extra addon(s) saved" : "Extra addons cleared (built-in defaults stay)");
+      if (!saved.length) { UI.toast("Extra addons cleared (built-in defaults stay)"); return; }
+      UI.toast("Checking addons…");
+      Addons.inspect(saved).then(function (res) {
+        var msg = res.map(function (r) {
+          var i = r.info || {};
+          if (i.error) return (i.name || r.url) + ": couldn't reach it";
+          if (!i.stream) return i.name + ": no streams (" + (i.resources || []).join("/") + " only), ignored";
+          return i.name + ": streams ✓";
+        }).join("  ·  ");
+        UI.toast(msg, 7000);
+      });
       return;
     }
     if (!save) { keyInput.value = Store.getSetting("tmdbKey", "") || CONFIG.TMDB_API_KEY || ""; return; }

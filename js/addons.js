@@ -29,7 +29,14 @@ var Addons = (function () {
   function all() {
     var out = defaults(), seen = {};
     out.forEach(function (a) { seen[a.url] = 1; });
-    userList().forEach(function (u) { if (!seen[u]) { seen[u] = 1; out.push({ url: u }); } });
+    var info = Store.getSetting("addonInfo", {});
+    userList().forEach(function (u) {
+      if (seen[u]) return;
+      seen[u] = 1;
+      var i = info[u];
+      if (i && i.stream === false) return;          // catalog/subtitle-only addon: nothing to play
+      out.push({ url: u, name: i && i.name });
+    });
     return out;
   }
 
@@ -51,6 +58,20 @@ var Addons = (function () {
     var arr = String(text || "").split(/[\s,]+/).map(normalize).filter(function (u) { return u && !defs[u]; });
     Store.setSetting("addons", arr);
     return arr;
+  }
+
+  // Read each addon's manifest: does it serve streams? (Remembered per URL.)
+  function inspect(urls) {
+    var info = Store.getSetting("addonInfo", {});
+    return Promise.all(urls.map(function (u) {
+      return getJson(u + "/manifest.json").then(function (m) {
+        var res = (m.resources || []).map(function (r) { return typeof r === "string" ? r : r && r.name; });
+        info[u] = { name: m.name || host(u), stream: res.indexOf("stream") >= 0, resources: res };
+      }).catch(function () { info[u] = { name: host(u), stream: null, error: true }; });
+    })).then(function () {
+      Store.setSetting("addonInfo", info);
+      return urls.map(function (u) { return { url: u, info: info[u] }; });
+    });
   }
 
   function getJson(url) {
@@ -132,5 +153,5 @@ var Addons = (function () {
   function langName(code) { return LANGS[code] || TWO[code] && LANGS[TWO[code]] || String(code).toUpperCase(); }
   function lang3(code2) { return TWO[code2] || code2; }
 
-  return { list: list, all: all, defaults: defaults, userList: userList, forItem: forItem, setFromText: setFromText, normalize: normalize, streams: streams, subtitles: subtitles, langName: langName, lang3: lang3 };
+  return { inspect: inspect, list: list, all: all, defaults: defaults, userList: userList, forItem: forItem, setFromText: setFromText, normalize: normalize, streams: streams, subtitles: subtitles, langName: langName, lang3: lang3 };
 })();
