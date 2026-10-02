@@ -62,6 +62,7 @@ var UI = (function () {
 
   function lazyImg(src, cls) {
     var img = h("img", { class: cls, alt: "" });
+    img.decoding = "async";   // decode posters off the main thread so scrolling doesn't hitch
     img.onload = function () { img.classList.add("loaded"); };
     img.onerror = function () { img.style.visibility = "hidden"; };
     if (!src) return img;
