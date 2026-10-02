@@ -45,10 +45,26 @@ var CONFIG = {
     }
 ,
     {
+      // 2Embed's inner players, loaded directly (skips 2Embed's click-to-play wrapper).
+      // They refuse to run in any sandbox, so they default to shield "off".
+      id: "vsrcbuzz",
+      name: "2Embed · Vsrc",
+      movie: "https://vidsrc.buzz/embed/movie/{tmdb}?autoplay=1",
+      tv: "https://vidsrc.buzz/embed/tv/{tmdb}/{season}/{episode}?autoplay=1",
+      shield: "off"
+    },
+    {
+      id: "videm",
+      name: "2Embed · Videm",
+      movie: "https://videm.xyz/embed/movie/{tmdb}?autoplay=1",
+      tv: "https://videm.xyz/embed/tv/{tmdb}/{season}/{episode}?autoplay=1",
+      shield: "off"
+    },
+    {
       id: "vidlink",
       name: "VidLink",
-      movie: "https://vidlink.pro/movie/{tmdb}?autoplay=true",
-      tv: "https://vidlink.pro/tv/{tmdb}/{season}/{episode}?autoplay=true",
+      movie: "https://vidlink.pro/movie/{tmdb}?autoplay=true&startAt={start}",
+      tv: "https://vidlink.pro/tv/{tmdb}/{season}/{episode}?autoplay=true&startAt={start}",
       shield: "strict"
     },
     {

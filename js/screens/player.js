@@ -388,11 +388,14 @@ Screens.player = function (params) {
   }
 
   function onMessage(e) {
-    if (!iframe || e.source !== iframe.contentWindow || !supportsControl()) return;
+    if (!iframe || e.source !== iframe.contentWindow) return;
     var msg = e.data;
     if (typeof msg === "string") { try { msg = JSON.parse(msg); } catch (x) { return; } }
     if (!msg || msg.type !== "PLAYER_EVENT" || !msg.data) return;
     var d = msg.data;
+    // Any source that reports progress gets resume + auto-next; only sources with a
+    // control API (supportsControl) get remote play/pause/seek and the time bar.
+    if (!supportsControl()) { trackProgress(d); return; }
     if (!rc.active) {
       rc.active = true;
       holder.classList.add("rc-on");
@@ -408,7 +411,12 @@ Screens.player = function (params) {
     else if (typeof d.playing === "boolean") rc.playing = d.playing;
     renderOsd();
     if (!rc.playing) showOsd(true);
+    trackProgress(d);
+  }
 
+  function trackProgress(d) {
+    if (typeof d.currentTime === "number" && rc.pending === null) rc.t = d.currentTime;
+    if (typeof d.duration === "number" && d.duration > 0) rc.dur = d.duration;
     // Remember the position for resume (throttled)
     var now = Date.now();
     if (rc.t > 0 && now - rc.saveAt > 5000) {

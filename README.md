@@ -50,10 +50,17 @@ On a desktop keyboard: arrows, Enter, Esc/Backspace = Back, PageUp/PageDown = CH
 
 \* The redirect guard still applies, but an ad could take over the whole app.
 
-Tested in a desktop browser: **2Embed** loads in strict mode. **VidLink / VidFast** check whether
-they can open a popup and show "Please Disable Sandbox" otherwise. The test browser blocks every
-popup, so their real TV behaviour is unknown: try "popups ok" first on the TV, then "off".
-VidSrc and MultiEmbed were blocked by the test network.
+### Source comparison (checked against each provider's player code)
+| Source | Autoplay | Remote control (OK / ◀ ▶) | Resume | Subtitle menu | Needs shield |
+|---|---|---|---|---|---|
+| **VidFast** | ✅ | ✅ commands via postMessage | ✅ `startAt` | ✅ `sub` + language list | works on TV (any level) |
+| 2Embed | ❌ click-to-play wrapper | ❌ | ❌ | ❌ | strict loads, inner player refuses sandbox |
+| 2Embed · Vsrc / Videm | ✅ `autoplay=1` | ❌ (Interact: arrows seek) | its own prompt | ❌ | **off** (rejects any sandbox) |
+| VidLink | ✅ | ❌ events only | ✅ `startAt` + saved position | ❌ (only an external file) | **off** (rejects sandbox); calls an ad link on play/end |
+| VidSrc.cc | ? | ? | ? | ? | down when tested (Cloudflare 522) |
+| MultiEmbed | ? | ? | ? | ? | behind a Cloudflare check; untested |
+
+Sources that report progress (VidFast, VidLink) also get resume and auto-next episode.
 
 ### Remote control (VidFast)
 VidFast lets the app send it commands, so the remote controls playback directly. You don't need
