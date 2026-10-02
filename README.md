@@ -53,7 +53,7 @@ On a desktop keyboard: arrows, Enter, Esc/Backspace = Back, PageUp/PageDown = CH
 ### Source comparison (checked against each provider's player code)
 | Source | Autoplay | Remote control (OK / ◀ ▶) | Resume | Subtitle menu | Needs shield |
 |---|---|---|---|---|---|
-| **VidFast** | ✅ | ✅ commands via postMessage | ✅ `startAt` | ✅ `sub` + language list | works on TV (any level) |
+| **VidFast** | ✅ | ✅ commands via postMessage | ✅ `startAt` | ✅ `sub` + language list | plays on your TV (level you used) |
 | 2Embed | ❌ click-to-play wrapper | ❌ | ❌ | ❌ | strict loads, inner player refuses sandbox |
 | 2Embed · Vsrc / Videm | ✅ `autoplay=1` | ❌ (Interact: arrows seek) | its own prompt | ❌ | **off** (rejects any sandbox) |
 | VidLink | ✅ | ❌ events only | ✅ `startAt` + saved position | ❌ (only an external file) | **off** (rejects sandbox); calls an ad link on play/end |
