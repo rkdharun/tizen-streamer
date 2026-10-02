@@ -27,7 +27,24 @@ Screens.player = function (params) {
 
   var frameHost = h("div", { class: "frame-host" });
   var loader = h("div", { class: "player-loader" }, [UI.spinner(), h("div", { class: "loader-text" })]);
-  var clickShield = h("div", { class: "click-shield", onclick: function () { showOverlay(); } });
+  // Moving a USB/Bluetooth mouse over the player hands it to the mouse (clicks reach
+  // the provider's own buttons); any remote key brings the shield back.
+  var clickShield = h("div", { class: "click-shield", onmousemove: enterPointer, onclick: enterPointer });
+  var pointerMode = false;
+  function enterPointer() {
+    if (pointerMode) return;
+    pointerMode = true;
+    hideOverlay();
+    holder.classList.add("pointer-mode");
+    UI.toast("Mouse mode: click inside the player. Press any remote key to return.", 3500);
+  }
+  function exitPointer() {
+    if (!pointerMode) return false;
+    pointerMode = false;
+    holder.classList.remove("pointer-mode");
+    reclaimFocus();
+    return true;
+  }
   var interactPill = h("div", { class: "interact-pill" });
 
   // Remote-control OSD (only for sources with a postMessage control API, e.g. VidFast)
@@ -61,7 +78,7 @@ Screens.player = function (params) {
   var episodeName = "";
 
   // Remote control state, fed by the embed's PLAYER_EVENT messages.
-  var rc = { active: false, playing: false, t: 0, dur: 0, pending: null, sendTimer: null, osdTimer: null, holdStart: 0, saveAt: 0 };
+  var rc = { active: false, playing: false, t: 0, dur: 0, pending: null, sendTimer: null, osdTimer: null, holdStart: 0, saveAt: 0, msgs: 0, loadedAt: Date.now() };
 
   function indexOfSource(id) {
     for (var i = 0; i < sources.length; i++) if (sources[i].id === id) return i;
@@ -166,7 +183,7 @@ Screens.player = function (params) {
     subEl.textContent = type === "tv"
       ? "Season " + season + " · Episode " + episode + (episodeName ? " — " + episodeName : "")
       : [UI.year(item), item.runtime ? item.runtime + " min" : ""].filter(Boolean).join(" · ");
-    sourceLabel.textContent = "Source: " + sources[sourceIdx].name + "   ·   " + LEVEL_LABEL[shieldLevel()];
+    sourceLabel.textContent = "Source: " + sources[sourceIdx].name + "   ·   " + LEVEL_LABEL[shieldLevel()] + "   ·   " + remoteStatus();
     buildControls();
   }
 
@@ -377,12 +394,22 @@ Screens.player = function (params) {
     try { window.focus(); holder.focus(); } catch (e) {}
   }
 
+  // What the player is telling us, shown in the menu (helps diagnose on the TV).
+  function remoteStatus() {
+    if (rc.active) return "Remote: connected ✓";
+    if (rc.msgs > 0 && supportsControl()) return "Remote: player answers, no control yet";
+    if (rc.msgs > 0) return "Progress tracking only (use Interact or a mouse)";
+    if (supportsControl()) return Date.now() - rc.loadedAt > 10000 ? "Remote: no answer from player" : "Remote: waiting for player…";
+    return "No remote support (use Interact or a mouse)";
+  }
+
   // ---- remote control (postMessage API) ----
   function supportsControl() { return !!sources[sourceIdx].control; }
 
   function resetRc() {
     clearTimeout(rc.sendTimer); clearTimeout(rc.osdTimer);
     rc.active = false; rc.playing = false; rc.t = 0; rc.dur = 0; rc.pending = null;
+    rc.msgs = 0; rc.loadedAt = Date.now();
     holder.classList.remove("rc-on", "osd-show");
   }
 
@@ -395,6 +422,7 @@ Screens.player = function (params) {
     var msg = e.data;
     if (typeof msg === "string") { try { msg = JSON.parse(msg); } catch (x) { return; } }
     if (!msg || msg.type !== "PLAYER_EVENT" || !msg.data) return;
+    if (!rc.msgs++) renderInfo();
     var d = msg.data;
     // Any source that reports progress gets resume + auto-next; only sources with a
     // control API (supportsControl) get remote play/pause/seek and the time bar.
@@ -405,7 +433,7 @@ Screens.player = function (params) {
       loader.style.display = "none";
       UI.toast("Remote connected · OK play/pause · ◀ ▶ seek · ▲ menu", 4000);
       hideOverlay();               // keys go straight to the player from now on
-      buildControls();
+      renderInfo();
     }
     if (typeof d.currentTime === "number" && rc.pending === null) rc.t = d.currentTime;
     if (typeof d.duration === "number" && d.duration > 0) rc.dur = d.duration;
@@ -525,14 +553,14 @@ Screens.player = function (params) {
   function startFocusGuard() {
     clearInterval(focusGuard);
     focusGuard = setInterval(function () {
-      if (interacting) return;
+      if (interacting || pointerMode) return;
       if (document.activeElement === iframe || !document.hasFocus()) reclaimFocus();
     }, 700);
   }
 
   function onWindowBlur() {
     // The embed grabbed focus without being asked (would swallow the Back key)
-    if (!interacting) setTimeout(reclaimFocus, 0);
+    if (!interacting && !pointerMode) setTimeout(reclaimFocus, 0);
   }
 
   function onWindowFocus() { if (interacting) endInteract(); }
@@ -547,11 +575,13 @@ Screens.player = function (params) {
   window.addEventListener("message", onMessage);
   startFocusGuard();
   setTimeout(showOverlay, 0);
+  var statusTimer = setInterval(function () { if (!rc.active) sourceLabel.textContent = "Source: " + sources[sourceIdx].name + "   ·   " + LEVEL_LABEL[shieldLevel()] + "   ·   " + remoteStatus(); }, 2000);
 
   return {
     el: holder,
     fullscreen: true,
     onKey: function (key, evt) {
+      if (exitPointer() && key !== "back") { showOverlay(); return true; }
       if (interacting) { endInteract(); showOverlay(); return true; }
       if (!key) return false;
 
@@ -578,7 +608,7 @@ Screens.player = function (params) {
     },
     destroy: function () {
       clearTimeout(overlayTimer); clearTimeout(loadTimeout);
-      clearInterval(interactTick); clearInterval(focusGuard);
+      clearInterval(interactTick); clearInterval(focusGuard); clearInterval(statusTimer);
       window.removeEventListener("blur", onWindowBlur);
       window.removeEventListener("focus", onWindowFocus);
       window.removeEventListener("message", onMessage);

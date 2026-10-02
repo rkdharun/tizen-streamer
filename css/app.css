@@ -306,7 +306,7 @@ html, body {
 .player { background: #000; outline: none; }
 .frame-host, .frame-host iframe { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; border: 0; background: transparent; }
 .click-shield { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
-.player.interacting .click-shield { display: none; }
+.player.interacting .click-shield, .player.pointer-mode .click-shield { display: none; }
 .player-loader {
   position: absolute; left: 0; top: 0; width: 1920px; height: 1080px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
