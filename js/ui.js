@@ -41,6 +41,7 @@ var UI = (function () {
     hand: '<path d="M9 11V5a1.5 1.5 0 013 0v5 M12 10V4a1.5 1.5 0 013 0v6 M15 10V6a1.5 1.5 0 013 0v8c0 4-3 7-7 7s-6-2-7.5-5L2 12a1.5 1.5 0 012.5-1.5L7 13V7a1.5 1.5 0 013 0" fill="none" stroke="currentColor" stroke-width="1.8"/>',
     shield: '<path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z"/>',
     reload: '<path d="M20 12a8 8 0 11-2.3-5.7 M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.4"/>',
+    film: '<rect x="2" y="4" width="20" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M10 9v6l5-3z"/>',
     stack: '<rect x="3" y="8" width="14" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 4h12a2 2 0 012 2v10" fill="none" stroke="currentColor" stroke-width="2"/>',
     services: '<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>',
     server: '<rect x="3" y="4" width="18" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="18" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="7" cy="7.5" r="1.2"/><circle cx="7" cy="16.5" r="1.2"/>'

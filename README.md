@@ -13,6 +13,7 @@ Plain HTML/CSS/JS with no build step. It targets Tizen 4.0+ (2018+ Samsung TVs).
 - Player: multiple sources, next/previous episode, the ad shield, and an Interact mode
 - Collections: 50+ franchises (Harry Potter, MCU, Bond, Baahubali, KGF…) in release order, with "continue where you left off"
 - Streaming services: "Browse by service" tiles and "Popular on Netflix / Prime Video / JioHotstar…" rows for your region (Settings → Region)
+- Trailers: official YouTube trailers from TMDB, controlled by the remote (OK pause, ◀ ▶ seek). If one can't be embedded, the next trailer is tried
 - Cast & crew row on every title, with person pages (bio, known for, movies, shows)
 - Movies in a franchise show their collection row on the details page
 - My List, watch history and settings are stored on the TV (localStorage)

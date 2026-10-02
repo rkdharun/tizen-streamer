@@ -75,7 +75,8 @@ var TMDB = (function () {
 
     details: function (type, id) {
       return get("/" + type + "/" + id, {
-        append_to_response: "external_ids,credits,recommendations,similar"
+        append_to_response: "external_ids,credits,recommendations,similar,videos",
+        include_video_language: "en,null"
       }).then(function (d) { d.media_type = type; return d; });
     },
     season: function (id, seasonNumber) { return get("/tv/" + id + "/season/" + seasonNumber); },
@@ -89,6 +90,15 @@ var TMDB = (function () {
         });
         return c;
       });
+    },
+    // YouTube trailers for a details object, best first (official trailer > trailer > teaser).
+    trailers: function (d) {
+      var vids = ((d.videos && d.videos.results) || []).filter(function (v) { return v.site === "YouTube" && v.key; });
+      var score = function (v) {
+        return (v.type === "Trailer" ? 4 : v.type === "Teaser" ? 2 : 0) + (v.official ? 2 : 0) + (v.iso_639_1 === "en" ? 1 : 0);
+      };
+      vids.sort(function (a, b) { return score(b) - score(a) || (b.published_at || "").localeCompare(a.published_at || ""); });
+      return vids.slice(0, 8);
     },
     person: function (id) { return get("/person/" + id, { append_to_response: "combined_credits" }); },
 

@@ -73,7 +73,11 @@ Screens.details = function (params) {
       UI.toast(added ? "Added to My List" : "Removed from My List");
     });
 
-    var actions = h("div", { class: "details-actions nav-group" }, [playBtn, listBtn]);
+    var trailers = TMDB.trailers(d);
+    var trailerBtn = trailers.length ? UI.button("Trailer", "film", function () {
+      App.push("trailer", { keys: trailers.map(function (v) { return v.key; }), title: UI.title(d) });
+    }) : null;
+    var actions = h("div", { class: "details-actions nav-group" }, [playBtn, trailerBtn, listBtn]);
     var tagline = d.tagline ? h("div", { class: "tagline", text: d.tagline }) : null;
     var cast = (d.credits && d.credits.cast || []).slice(0, 5).map(function (c) { return c.name; }).join(", ");
 
