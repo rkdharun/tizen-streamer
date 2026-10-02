@@ -321,8 +321,9 @@ html, body {
 .pl-sub { font-size: 26px; color: #d0d0da; margin-top: 8px; }
 .pl-bottom { position: absolute; left: 0; right: 0; bottom: 0; padding: 140px 80px 60px; background: linear-gradient(0deg, rgba(0,0,0,.9), rgba(0,0,0,0)); }
 .pl-source { font-size: 22px; color: var(--muted); margin-bottom: 20px; }
-.pl-controls { display: flex; }
-.pl-controls .btn { height: 68px; padding: 0 30px; font-size: 25px; margin-right: 16px; }
+.pl-controls { display: flex; flex-wrap: wrap; }
+.pl-controls .btn { height: 64px; padding: 0 24px; font-size: 23px; margin: 0 12px 12px 0; }
+.pl-controls .btn .icon { width: 26px; height: 26px; margin-right: 10px; }
 .source-panel {
   display: none; position: absolute; bottom: 170px; left: 80px;
   padding: 20px 8px 8px 20px; border-radius: 22px; background: rgba(21,21,29,.96);

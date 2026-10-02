@@ -241,13 +241,13 @@ Screens.player = function (params) {
     add("interact", "Interact", "hand", startInteract);
     if (type === "tv") {
       add("prev", "Prev", "prev", function () { goEpisode(-1); }, !neighbour(-1));
-      add("next", "Next episode", "next", function () { goEpisode(1); }, !neighbour(1));
+      add("next", "Next", "next", function () { goEpisode(1); }, !neighbour(1));
     }
     if (supportsSubs()) add("subs", "Subtitles", "cc", toggleSubsPanel);
     add("sources", "Sources", "server", toggleSourcePanel);
     add("shield", LEVEL_LABEL[shieldLevel()], "shield", toggleShield).classList.toggle("off", shieldLevel() !== "strict");
+    add("browser", "Browser", "globe", toggleBrowserPanel);
     add("reload", "Reload", "reload", function () { guardOff = false; blockedCount = 0; load(); });
-    add("close", "Close", "close", function () { App.back(); });
     if (keep && overlay.classList.contains("show")) {
       var again = controls.querySelector('[data-id="' + keep + '"]');
       if (again) Nav.focus(again);
@@ -301,6 +301,31 @@ Screens.player = function (params) {
         }
       };
     }));
+  }
+
+  // ---- open in Samsung's browser (its cursor can click inside the player) ----
+  function toggleBrowserPanel() {
+    var here = sources[sourceIdx];
+    var reelix = sources.filter(function (x) { return x.id === "reelix"; })[0];
+    var items = [{
+      label: "This source (" + here.name + ")", icon: "globe",
+      pick: function () { openExternally(buildUrl(here)); }
+    }];
+    if (reelix && reelix !== here) items.push({
+      label: "Reelix page (ad-free)", icon: "globe",
+      pick: function () { openExternally(buildUrl(reelix)); }
+    });
+    openPanel("browser", items);
+  }
+
+  function openExternally(url) {
+    if (!url) { UI.toast("This source can't open this title"); return; }
+    if (rc.t > 0) Store.setPosition(item, type === "tv" ? { season: season, episode: episode } : null, rc.t, rc.dur);
+    UI.toast("Opening in the TV browser… use the remote's cursor there. Come back to ReelTV when done.", 5000);
+    App.back();                                   // stop our player so audio doesn't overlap
+    setTimeout(function () {
+      App.openInBrowser(url, function () { UI.toast("Couldn't open the TV browser on this model", 4000); });
+    }, 350);
   }
 
   // ---- subtitles (sources whose URL takes {sub}) ----

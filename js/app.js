@@ -259,7 +259,25 @@ var App = (function () {
     if (!TMDB.hasKey()) UI.toast("Add your TMDB API key to get started", 5000);
   }
 
+  // Open a page in Samsung's built-in browser (it has a remote-driven cursor that apps don't).
+  function openInBrowser(url, onFail) {
+    try {
+      var ctl = new tizen.ApplicationControl("http://tizen.org/appcontrol/operation/view", url, null, null, null);
+      tizen.application.launchAppControl(ctl, "org.tizen.browser", function () {}, function () {
+        // Some models register the browser under another id: let the system pick a handler.
+        try { tizen.application.launchAppControl(ctl, null, function () {}, onFail); } catch (e) { if (onFail) onFail(e); }
+      });
+    } catch (e) {
+      if (window.tizen) { if (onFail) onFail(e); return; }
+      // Desktop testing: open a normal tab (window.open is blocked app-wide, so use a link).
+      var a = document.createElement("a");
+      a.href = url; a.target = "_blank"; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.parentNode.removeChild(a);
+    }
+  }
+
   return {
+    openInBrowser: openInBrowser,
     init: init, go: go, push: push, back: back, modal: modal, closeModal: closeModal,
     top: top, isModalOpen: function () { return !!modalState; }
   };

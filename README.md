@@ -88,6 +88,16 @@ quality setting.
 The app remembers where you stopped and resumes there next time (`{start}` in the source URL).
 TV episodes go straight to the next one when an episode ends.
 
+### Clicking inside the player (subtitles, quality, servers)
+An app can't click inside another website's player (browser security), and **Interact does not
+show a cursor**. It only forwards the arrow/OK keys for a few seconds. Two things do work:
+
+- **Player menu → Browser**: opens this source, or Reelix's ad-free page, in Samsung's built-in
+  browser. The browser has its own remote-driven cursor that can click anything. Come back to
+  ReelTV when done; your position is saved.
+- **A USB/Bluetooth mouse or a pointer remote**: move it over the player to enter mouse mode.
+  Any remote key brings the app's controls back.
+
 ### About Interact
 Key presses go to whichever frame has focus. While the embed is focused the app cannot see
 any keys, including BACK. That's why **Interact** hands the remote to the player only for a

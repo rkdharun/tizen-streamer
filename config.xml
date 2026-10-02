@@ -26,6 +26,8 @@
 
     <tizen:privilege name="http://tizen.org/privilege/internet"/>
     <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
+    <!-- "Open in TV browser": hands the player page to Samsung's browser (which has its own cursor) -->
+    <tizen:privilege name="http://tizen.org/privilege/application.launch"/>
     <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
 
     <tizen:content-security-policy>default-src * 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; frame-src * https: http: data: blob:; media-src * https: http: data: blob:; img-src * https: http: data: blob:</tizen:content-security-policy>
