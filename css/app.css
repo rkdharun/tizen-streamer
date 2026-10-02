@@ -207,6 +207,44 @@ html, body {
 .episode.current .card-img::after { opacity: 1; box-shadow: inset 0 0 0 4px var(--accent); }
 .episode.current.focused .card-img::after { box-shadow: inset 0 0 0 5px var(--ring); }
 
+/* Person / collection / provider cards */
+.card.person { width: 200px; }
+.card.person .card-img { width: 200px; height: 200px; border-radius: 100px; }
+.card.person .card-img::after { border-radius: 100px; }
+.card.person .card-title, .card.person .card-meta { text-align: center; }
+.initials { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 64px; font-weight: 800; color: #777790; }
+.collection-name {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 20px 16px;
+  background: linear-gradient(0deg, rgba(0,0,0,.85), rgba(0,0,0,0));
+  font-size: 28px; font-weight: 800; white-space: normal; line-height: 1.15;
+}
+.card.provider { width: 200px; }
+.card.provider .card-img { width: 200px; height: 200px; border-radius: 36px; background: #fff; }
+.card.provider .card-img::after { border-radius: 36px; }
+.card.provider .card-img img { object-fit: cover; }
+.card.provider .card-title { text-align: center; }
+.card.more-tile .card-img { display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--bg-3); }
+.card.more-tile .icon { width: 64px; height: 64px; color: var(--accent); }
+.more-label { margin-top: 16px; font-size: 26px; font-weight: 800; }
+.card.current .card-img::after { opacity: 1; box-shadow: inset 0 0 0 4px var(--accent); }
+.card.current.focused .card-img::after { box-shadow: inset 0 0 0 5px var(--ring); }
+.collections-grid > .card { margin: 0 26px 34px 0; }
+.services-grid > .card { margin: 0 34px 40px 0; }
+
+/* Person page */
+.person-head { display: flex; padding: 110px 60px 30px; animation: riseIn .42s cubic-bezier(.22,.7,.25,1) both; }
+.person-photo { flex-shrink: 0; width: 300px; height: 450px; border-radius: 22px; overflow: hidden; background: var(--bg-3); margin-right: 56px; }
+.person-photo img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .3s; }
+.person-photo img.loaded { opacity: 1; }
+.person-photo .initials { font-size: 120px; }
+.person-text { width: 1200px; }
+.person-bio { -webkit-line-clamp: 6; }
+
+/* Provider page header */
+.provider-title { display: flex; align-items: center; margin-bottom: 26px; }
+.provider-title h1 { margin: 0; }
+.provider-logo { width: 84px; height: 84px; border-radius: 20px; margin-right: 26px; }
+
 /* ---------------- Grid (browse / search / list) ---------------- */
 .grid { display: flex; flex-wrap: wrap; padding: 18px 40px 0 60px; }
 .grid > .card { margin: 0 26px 34px 0; }

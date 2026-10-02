@@ -86,12 +86,46 @@ Screens.home = function () {
     { title: "Trending this week", fn: function (p) { return TMDB.trending("all", p); }, landscape: true },
     { title: "Popular Movies", fn: function (p) { return TMDB.popular("movie", p); } },
     { title: "Popular TV Shows", fn: function (p) { return TMDB.popular("tv", p); } },
+    { title: "Browse by service", build: serviceTiles },
+    { title: "Popular on…", build: function () { return serviceRow(0); } },
     { title: "Popular Anime", fn: function (p) { return TMDB.anime(p); } },
+    { title: "Collections", build: collectionsRow },
+    { title: "Popular on…", build: function () { return serviceRow(1); } },
     { title: "Now in Theatres", fn: function (p) { return TMDB.nowPlaying(p); } },
     { title: "Top Rated Movies", fn: function (p) { return TMDB.topRated("movie", p); } },
+    { title: "Popular on…", build: function () { return serviceRow(2); } },
     { title: "Top Rated TV", fn: function (p) { return TMDB.topRated("tv", p); } },
     { title: "On the Air", fn: function (p) { return TMDB.onTheAir(p); } }
   ];
+
+  // ---- custom rows (resolve to a ready-made row element) ----
+  function serviceTiles() {
+    return Services.list().then(function (list) {
+      if (!list.length) throw new Error("none");
+      var r = UI.customRow("Browse by service", list.slice(0, 12).map(UI.providerTile));
+      r.classList.add("services-row");
+      return r;
+    });
+  }
+
+  function serviceRow(i) {
+    return Services.list().then(function (list) {
+      var p = list[i];
+      if (!p) throw new Error("none");
+      return Services.popular(p, 1).then(function (res) {
+        if (!res.results.length) throw new Error("empty");
+        return UI.row("Popular on " + p.provider_name, res.results, {
+          loadMore: function (page) { return Services.popular(p, page); }
+        });
+      });
+    });
+  }
+
+  function collectionsRow() {
+    var r = UI.customRow("Collections", []);
+    Collections.fill(r.querySelector(".row-track"), CONFIG.COLLECTIONS.slice(0, 14));
+    return Promise.resolve(r);
+  }
 
   function continueRow() {
     var hist = Store.history();
@@ -122,6 +156,14 @@ Screens.home = function () {
     placeholders.forEach(function (p) { scroller.appendChild(p); });
 
     rows.forEach(function (r, i) {
+      if (r.build) {
+        r.build().then(function (row) {
+          if (placeholders[i].parentNode) scroller.replaceChild(row, placeholders[i]);
+        }).catch(function () {
+          if (placeholders[i].parentNode) scroller.removeChild(placeholders[i]);
+        });
+        return;
+      }
       r.fn(1).then(function (res) {
         if (i === 0) {
           var hero = buildHero(res.results);

@@ -41,6 +41,8 @@ var UI = (function () {
     hand: '<path d="M9 11V5a1.5 1.5 0 013 0v5 M12 10V4a1.5 1.5 0 013 0v6 M15 10V6a1.5 1.5 0 013 0v8c0 4-3 7-7 7s-6-2-7.5-5L2 12a1.5 1.5 0 012.5-1.5L7 13V7a1.5 1.5 0 013 0" fill="none" stroke="currentColor" stroke-width="1.8"/>',
     shield: '<path d="M12 2l8 3v6c0 5-3.5 9.5-8 11-4.5-1.5-8-6-8-11V5z"/>',
     reload: '<path d="M20 12a8 8 0 11-2.3-5.7 M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.4"/>',
+    stack: '<rect x="3" y="8" width="14" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 4h12a2 2 0 012 2v10" fill="none" stroke="currentColor" stroke-width="2"/>',
+    services: '<rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/>',
     server: '<rect x="3" y="4" width="18" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><rect x="3" y="13" width="18" height="7" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="7" cy="7.5" r="1.2"/><circle cx="7" cy="16.5" r="1.2"/>'
   };
 
@@ -104,6 +106,53 @@ var UI = (function () {
       else App.push("details", { type: item.media_type, id: item.id });
     });
     return el;
+  }
+
+  // Round cast/crew card -> person page.
+  function personCard(p, sub) {
+    var el = h("div", { class: "card person focusable" }, [
+      h("div", { class: "card-img" }, [
+        p.profile_path ? lazyImg(TMDB.img(p.profile_path, "w185")) : h("div", { class: "initials", text: initials(p.name) })
+      ]),
+      h("div", { class: "card-title", text: p.name || "" }),
+      h("div", { class: "card-meta", text: sub || p.character || p.known_for_department || "" })
+    ]);
+    el.addEventListener("click", function () { App.push("person", { id: p.id }); });
+    return el;
+  }
+
+  function initials(name) {
+    return (name || "?").split(/\s+/).slice(0, 2).map(function (w) { return w.charAt(0); }).join("").toUpperCase();
+  }
+
+  // Wide card for a movie collection (franchise) -> collection page.
+  function collectionCard(c) {
+    var el = h("div", { class: "card landscape collection focusable" }, [
+      h("div", { class: "card-img" }, [
+        lazyImg(TMDB.img(c.backdrop_path || c.poster_path, "w500")),
+        h("div", { class: "collection-name", text: (c.name || "").replace(/ Collection$/, "") })
+      ]),
+      h("div", { class: "card-title", text: c.name || "" }),
+      h("div", { class: "card-meta", text: c.count ? c.count + " movies" : "Collection" })
+    ]);
+    el.addEventListener("click", function () { App.push("collection", { id: c.id }); });
+    return el;
+  }
+
+  // Streaming service logo tile -> provider page.
+  function providerTile(p) {
+    var el = h("div", { class: "card provider focusable" }, [
+      h("div", { class: "card-img" }, [lazyImg(TMDB.img(p.logo_path, "w154"))]),
+      h("div", { class: "card-title", text: p.provider_name })
+    ]);
+    el.addEventListener("click", function () { App.push("provider", { id: p.provider_id, name: p.provider_name, logo: p.logo_path }); });
+    return el;
+  }
+
+  // Row of arbitrary pre-built cards (people, collections, providers).
+  function customRow(heading, cards) {
+    var track = h("div", { class: "row-track nav-group", "data-scroll": "x" }, cards);
+    return h("section", { class: "row", "data-scroll-anchor": "" }, [h("h2", { class: "row-title", text: heading }), track]);
   }
 
   // Horizontal row of cards.
@@ -170,6 +219,7 @@ var UI = (function () {
 
   return {
     h: h, icon: icon, lazyImg: lazyImg, card: card, row: row, placeholderRow: placeholderRow,
+    personCard: personCard, collectionCard: collectionCard, providerTile: providerTile, customRow: customRow,
     toast: toast, spinner: spinner, message: message, button: button, year: year, title: title
   };
 })();

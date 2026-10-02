@@ -43,6 +43,14 @@ var Store = (function () {
       write("settings", s);
     },
 
+    // Country for "what's on Netflix/Prime…" (TMDB watch providers). Defaults to the TV's locale.
+    region: function () {
+      var r = this.getSetting("region", "");
+      if (r) return r;
+      var m = /[-_]([A-Za-z]{2})$/.exec(navigator.language || "");
+      return m ? m[1].toUpperCase() : "US";
+    },
+
     watchlist: function () { return read("watchlist", []); },
     inWatchlist: function (item) {
       var k = key(item);

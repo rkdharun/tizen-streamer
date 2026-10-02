@@ -79,6 +79,32 @@ var TMDB = (function () {
       }).then(function (d) { d.media_type = type; return d; });
     },
     season: function (id, seasonNumber) { return get("/tv/" + id + "/season/" + seasonNumber); },
+
+    collection: function (id) {
+      return get("/collection/" + id).then(function (c) {
+        (c.parts || []).forEach(function (p) { p.media_type = "movie"; });
+        // Release order; unreleased (no date) last
+        c.parts = (c.parts || []).sort(function (a, b) {
+          return (a.release_date || "9999").localeCompare(b.release_date || "9999");
+        });
+        return c;
+      });
+    },
+    person: function (id) { return get("/person/" + id, { append_to_response: "combined_credits" }); },
+
+    // Streaming services available in a region, most prominent first.
+    providers: function (region) {
+      return get("/watch/providers/movie", { watch_region: region }).then(function (d) {
+        return (d.results || []).filter(function (p) { return p.logo_path; })
+          .sort(function (a, b) { return (a.display_priority || 99) - (b.display_priority || 99); });
+      });
+    },
+    byProvider: function (type, providerId, region, page) {
+      return list("/discover/" + type, {
+        page: page, with_watch_providers: providerId, watch_region: region,
+        with_watch_monetization_types: "flatrate", sort_by: "popularity.desc"
+      }, type);
+    },
     genres: function (type) { return get("/genre/" + type + "/list").then(function (d) { return d.genres || []; }); }
   };
 })();

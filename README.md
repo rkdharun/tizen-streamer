@@ -11,6 +11,10 @@ Plain HTML/CSS/JS with no build step. It targets Tizen 4.0+ (2018+ Samsung TVs).
 - Search: on-screen D-pad keyboard (a USB/BT keyboard works too) with live results
 - Details: info, Play/Resume, My List, season chips, episode row (remembers the last watched episode), "More like this"
 - Player: multiple sources, next/previous episode, the ad shield, and an Interact mode
+- Collections: 50+ franchises (Harry Potter, MCU, Bond, Baahubali, KGF…) in release order, with "continue where you left off"
+- Streaming services: "Browse by service" tiles and "Popular on Netflix / Prime Video / JioHotstar…" rows for your region (Settings → Region)
+- Cast & crew row on every title, with person pages (bio, known for, movies, shows)
+- Movies in a franchise show their collection row on the details page
 - My List, watch history and settings are stored on the TV (localStorage)
 
 ## Remote controls
@@ -54,6 +58,7 @@ On a desktop keyboard: arrows, Enter, Esc/Backspace = Back, PageUp/PageDown = CH
 | Source | Autoplay | Remote control (OK / ◀ ▶) | Resume | Subtitle menu | Needs shield |
 |---|---|---|---|---|---|
 | **VidFast** | ✅ | ✅ commands via postMessage | ✅ `startAt` | ✅ `sub` + language list | plays on your TV (level you used) |
+| **Reelix (website)** | ✅ (Reelix's page) | ❌ | Reelix's own | Reelix's own | off. vidcore is ad-free only when Reelix embeds it, so this loads Reelix's full page |
 | **VidCore** (reelix.ac's player) | ✅ | ? same codebase as VidFast; connects automatically if supported | ✅ `startAt` | ✅ `sub` + language list | refuses Strict (like VidFast) |
 | 2Embed | ❌ click-to-play wrapper | ❌ | ❌ | ❌ | strict loads, inner player refuses sandbox |
 | 2Embed · Vsrc / Videm | ✅ `autoplay=1` | ❌ (Interact: arrows seek) | its own prompt | ❌ | **off** (rejects any sandbox) |

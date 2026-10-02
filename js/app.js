@@ -13,6 +13,8 @@ var App = (function () {
     { name: "movies", label: "Movies", icon: "movie" },
     { name: "tv", label: "TV Shows", icon: "tv" },
     { name: "anime", label: "Anime", icon: "anime" },
+    { name: "collections", label: "Collections", icon: "stack" },
+    { name: "services", label: "Services", icon: "services" },
     { name: "mylist", label: "My List", icon: "list" },
     { name: "settings", label: "Settings", icon: "settings" }
   ];

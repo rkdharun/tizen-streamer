@@ -15,6 +15,7 @@
  *            sends PLAYER_EVENT updates; the remote then controls playback directly.
  *   {start} -> resume position in seconds (0 if none).
  *   {sub}   -> subtitle language code chosen in the player menu ("" = off).
+ *   {slug}  -> "title-words-<tmdb id>" (Reelix-style URL slug).
  *   subsList -> optional URL returning [{language, display}] to list available subtitles.
  */
 var CONFIG = {
@@ -22,6 +23,20 @@ var CONFIG = {
   TMDB_BASE: "https://api.themoviedb.org/3",
   IMG_BASE: "https://image.tmdb.org/t/p/",
   LANGUAGE: "en-US",
+
+  // Franchises shown on Home / Collections (TMDB collection IDs, verified).
+  COLLECTIONS: [
+    1241, 86311, 10, 119, 121938, 9485, 404609, 87359, 645, 263, 531241, 2344, 726871,
+    87096, 328, 295, 10194, 2150, 86066, 8650, 84, 264, 528, 8091, 131635, 33514, 230,
+    131292, 131295, 284433, 448150, 748, 77816, 89137, 386382, 468222, 137697, 87118,
+    8354, 14740, 86055, 350309, 657153, 921781, 44976, 656, 1575, 553717, 304, 31562,
+    1570, 2883, 86119
+  ],
+
+  // Subscription services to feature (TMDB provider IDs). Others in the region are
+  // listed after these; rental stores and aggregators are skipped.
+  PREFERRED_PROVIDERS: [8, 119, 9, 337, 2336, 122, 350, 1899, 384, 15, 232, 237, 309, 283, 531, 386, 532, 11],
+  SKIP_PROVIDERS: [2, 3, 10, 192, 2285, 538, 7, 68, 35],
 
   // Seconds the remote stays "inside" the player after choosing Interact.
   INTERACT_SECONDS: 12,
@@ -46,6 +61,15 @@ var CONFIG = {
       shield: "strict",
       control: "postmessage",
       subsList: "https://vidcore.io/wyzie?id={tmdb}"
+    },
+    {
+      // Reelix's own watch page (its partner deal makes vidcore ad-free there).
+      // Shows Reelix's full page, so the layout is less TV-friendly.
+      id: "reelix",
+      name: "Reelix (website)",
+      movie: "https://reelix.ac/watch/movie/{slug}",
+      tv: "https://reelix.ac/watch/tv/{slug}?s={season}&e={episode}",
+      shield: "off"
     },
     {
       id: "2embed",

@@ -92,7 +92,10 @@ Screens.player = function (params) {
     var imdb = (item.external_ids && item.external_ids.imdb_id) || item.imdb_id || "";
     if (tpl.indexOf("{imdb}") >= 0 && !imdb) return null;
     var start = Math.floor(Store.position(item, type === "tv" ? { season: season, episode: episode } : null) || 0);
+    var slug = (UI.title(item) || "title").toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") + "-" + item.id;
     return tpl.replace(/\{start\}/g, start)
+              .replace(/\{slug\}/g, slug)
               .replace(/\{sub\}/g, encodeURIComponent(Store.getSetting("subLang", "")))
               .replace(/\{tmdb\}/g, item.id)
               .replace(/\{imdb\}/g, imdb)

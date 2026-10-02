@@ -67,6 +67,15 @@ Screens.settings = function () {
     Store.setSetting("source", CONFIG.SOURCES[(idx + 1) % CONFIG.SOURCES.length].id);
   }, "Press OK to cycle. You can also switch live in the player (YELLOW).");
 
+  var REGIONS = ["", "IN", "US", "GB", "CA", "AU", "DE", "FR", "ES", "IT", "JP", "KR", "BR", "MX", "AE", "SG"];
+  row("Region", function () {
+    var r = Store.getSetting("region", "");
+    return r || "Auto (" + Store.region() + ")";
+  }, function () {
+    var r = Store.getSetting("region", "");
+    Store.setSetting("region", REGIONS[(REGIONS.indexOf(r) + 1) % REGIONS.length]);
+  }, "Decides which streaming services appear (Netflix, Prime Video, JioHotstar…). Press OK to cycle.");
+
   row("Ad & popup shield (default)", function () {
     return Store.getSetting("shieldDefault", true) ? "On" : "Off";
   }, function () {

@@ -89,6 +89,38 @@ Screens.details = function (params) {
 
     if (type === "tv") buildSeasons(d);
 
+    // Part of a franchise? Show the whole collection in release order.
+    if (d.belongs_to_collection) {
+      var bc = d.belongs_to_collection;
+      var slot = UI.placeholderRow("Part of " + bc.name);
+      scroller.appendChild(slot);
+      TMDB.collection(bc.id).then(function (c) {
+        var row = UI.row("Part of " + c.name, c.parts, {
+          onSelect: function (it) { App.push("details", { type: "movie", id: it.id }); }
+        });
+        var cards = row.querySelectorAll(".card");
+        c.parts.forEach(function (p, i) {
+          cards[i].querySelector(".card-meta").textContent = "#" + (i + 1) + " · " + (UI.year(p) || "TBA") + (p.id === d.id ? " · this one" : "");
+          if (p.id === d.id) cards[i].classList.add("current");
+        });
+        var more = UI.h("div", { class: "card more-tile focusable" }, [
+          UI.h("div", { class: "card-img" }, [UI.icon("stack"), UI.h("div", { class: "more-label", text: "Full collection" })]),
+          UI.h("div", { class: "card-title", text: c.name }),
+          UI.h("div", { class: "card-meta", text: c.parts.length + " movies" })
+        ]);
+        more.addEventListener("click", function () { App.push("collection", { id: c.id }); });
+        row.querySelector(".row-track").appendChild(more);
+        if (slot.parentNode) scroller.replaceChild(row, slot);
+      }).catch(function () { if (slot.parentNode) scroller.removeChild(slot); });
+    }
+
+    // Cast & crew -> person pages
+    var people = (d.credits && d.credits.cast || []).slice(0, 18);
+    var directors = (d.credits && d.credits.crew || []).filter(function (c) { return c.job === "Director" || c.job === "Creator"; }).slice(0, 2);
+    var cards = directors.map(function (c) { return UI.personCard(c, c.job); })
+      .concat(people.map(function (c) { return UI.personCard(c); }));
+    if (cards.length) scroller.appendChild(UI.customRow("Cast & crew", cards));
+
     var recs = ((d.recommendations && d.recommendations.results) || []).concat(
       (d.similar && d.similar.results) || []).filter(function (r) { return r.poster_path; });
     var seen = {};
