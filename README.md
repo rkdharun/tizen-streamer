@@ -37,7 +37,9 @@ On a desktop keyboard: arrows, Enter, Esc/Backspace = Back, PageUp/PageDown = CH
 3. **Focus guard.** If an embed grabs keyboard focus, the app takes it back, so BACK and
    the menu keep working.
 4. **Click shield.** A transparent layer covers the iframe whenever the menu is in control.
-5. **config.xml** allows no external top-level navigation for the app itself.
+5. **config.xml** has `<tizen:allow-navigation>*</tizen:allow-navigation>`. Samsung TVs won't
+   load external pages in an iframe without it. Redirects of the app itself are blocked by the
+   sandbox (strict / popups ok) instead, so **Shield off** can let an ad take over the app.
 
 **Shield levels** (RED in the player cycles them; remembered per source):
 | Level | Popups / new tabs | Top-frame redirects | Use for |
@@ -46,7 +48,7 @@ On a desktop keyboard: arrows, Enter, Esc/Backspace = Back, PageUp/PageDown = CH
 | popups ok | allowed (popups stay sandboxed) | blocked | sources that say "Please disable sandbox" |
 | off | allowed | allowed* | last resort |
 
-\* The redirect guard and `config.xml` navigation rules still apply.
+\* The redirect guard still applies, but an ad could take over the whole app.
 
 Tested in a desktop browser: **2Embed** loads in strict mode. **VidLink / VidFast** check whether
 they can open a popup and show "Please Disable Sandbox" otherwise. The test browser blocks every

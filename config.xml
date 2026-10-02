@@ -18,14 +18,17 @@
     <!-- Network access for TMDB + embed providers (iframes) -->
     <access origin="*" subdomains="true"/>
 
-    <!-- The app's top-level document must never navigate away (blocks top-frame ad redirects).
-         Intentionally no <tizen:allow-navigation> entries for external hosts. -->
+    <!-- Required for external pages to load inside the player iframe on Samsung TVs
+         (without it, embeds stay blank in every shield mode). Embeds pull nested frames
+         from many changing domains, so this must be "*". Top-frame ad redirects are still
+         blocked by the iframe sandbox (shield strict / popups ok) and the redirect guard. -->
+    <tizen:allow-navigation>*</tizen:allow-navigation>
 
     <tizen:privilege name="http://tizen.org/privilege/internet"/>
     <tizen:privilege name="http://tizen.org/privilege/tv.inputdevice"/>
     <tizen:privilege name="http://developer.samsung.com/privilege/network.public"/>
 
-    <tizen:content-security-policy>default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; frame-src *; img-src * data: blob:</tizen:content-security-policy>
+    <tizen:content-security-policy>default-src * 'unsafe-inline' 'unsafe-eval' data: blob: https: http:; frame-src * https: http: data: blob:; media-src * https: http: data: blob:; img-src * https: http: data: blob:</tizen:content-security-policy>
 
     <tizen:setting screen-orientation="landscape"
                    context-menu="disable"
